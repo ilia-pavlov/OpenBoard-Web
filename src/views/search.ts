@@ -6,6 +6,7 @@ import { Links } from '../endpoints'
 import type { PlayerSummary } from '../models'
 import type { View } from '../router'
 import { replaceQuery } from '../router'
+import { badgeSlot } from '../toplists'
 import { avatar, chevron, clockDigits, emptyState, errorCard, esc, prefs, skeleton, stateChip } from '../ui'
 
 export const searchView: View = ({ root, params, signal }) => {
@@ -26,6 +27,11 @@ export const searchView: View = ({ root, params, signal }) => {
   const showHome = () => {
     const recents = prefs.recents
     results.innerHTML = `
+      <a class="card browse-row" href="#/top100">
+        <span class="browse-icon" aria-hidden="true">🏅</span>
+        <span><strong>Top 100 lists</strong><small>Best US Chess players by age: 7 &amp; under through 18, girls, seniors</small></span>
+        ${chevron}
+      </a>
       <a class="card browse-row" href="${Links.join}" target="_blank" rel="noopener">
         <span class="browse-icon" aria-hidden="true">♙</span>
         <span><strong>Join or renew US Chess</strong><small>Membership is required to play rated events and get an official rating</small></span>
@@ -99,7 +105,7 @@ function resultRow(p: PlayerSummary): string {
     ${avatar(p.name)}
     <span class="player-text">
       <span class="player-name"><strong>${esc(p.name)}</strong>${stateChip(p.state)}</span>
-      <small class="mono">ID ${p.id}</small>
+      <span class="player-meta"><small class="mono">ID ${p.id}</small>${badgeSlot(p.id)}</span>
     </span>
     ${clockDigits(p.regular, { size: 'sm' })}
     ${chevron}

@@ -1,8 +1,10 @@
 import { Params, Ratings, fill } from './endpoints'
+import { cached } from './store'
 import {
   type APIMaxRank, type APIMember, type APIMemberGame, type APIMemberSection, type APIPage, type APIRatedEvent,
-  type APIStanding, type ChessEvent, type Player, type PlayerSummary, type RatedWin, type RatedWins, mapEvent,
-  mapPlayer, mapRegularWin, mapStanding, mapSummary,
+  type APIStanding, type APITopList, type APITopListDefinition, type ChessEvent, type Player, type PlayerSummary,
+  type RatedWin, type RatedWins, type TopList, type TopListDefinition, mapEvent, mapPlayer, mapRegularWin,
+  mapStanding, mapSummary, mapTopList, mapTopListDefinitions,
 } from './models'
 
 export class ApiError extends Error {
@@ -171,4 +173,19 @@ export async function fetchRegularPreRatings(eventID: string, section: number): 
     if (standing.regular?.pre != null) ratings[standing.id] = standing.regular.pre
   }
   return ratings
+}
+
+/** Top 100 lists are published monthly; half a day is fresh enough. */
+const topListTTL = 12 * 60 * 60 * 1000
+
+export function fetchTopListDefinitions(): Promise<TopListDefinition[]> {
+  return cached('toplist-definitions', topListTTL, async () =>
+    mapTopListDefinitions((await get<APIPage<APITopListDefinition>>(Ratings.topListCatalog, { [Params.size]: '200' })).items),
+  )
+}
+
+export function fetchTopList(definition: TopListDefinition): Promise<TopList> {
+  return cached(`toplist-${definition.id}`, topListTTL, async () =>
+    mapTopList(await get<APITopList>(fill(Ratings.topList, { listID: definition.id })), definition),
+  )
 }

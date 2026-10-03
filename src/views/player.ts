@@ -12,6 +12,7 @@ import {
 } from '../ui'
 import type { View } from '../router'
 import { mountBestWins } from './bestwins-card'
+import { badgeSlot } from '../toplists'
 
 export const myCardView: View = (ctx) => {
   const id = prefs.primary
@@ -92,6 +93,7 @@ function playerPage(player: Player, mode: 'mycard' | 'profile'): string {
       <button class="copy-id" type="button" data-action="copy-id" aria-label="Copy member ID ${player.id}">ID ${player.id}</button>
       ${classChip(regular?.value, player.ranking?.stateName ?? player.state)}
     </div>
+    ${badgeSlot(player.id, 'all')}
 
     ${historyLink(player, 'regular', heroCard(regular, lastDelta, player.ratingHistory, peakRegular(player), hasHistory(player, 'regular')), 'hero')}
     <div class="mini-row">

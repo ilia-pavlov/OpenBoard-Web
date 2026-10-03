@@ -8,6 +8,7 @@ import type { ChessEvent, EventSection, PrePost, RoundOutcome, Standing } from '
 import { delta } from '../models'
 import type { View } from '../router'
 import { replaceQuery } from '../router'
+import { badgeSlot } from '../toplists'
 import { chevron, emptyState, errorCard, esc, eventDate, prefs, signed, skeleton, stateChip } from '../ui'
 
 export const crosstableView: View = ({ root, params, signal }, [eventID]) => {
@@ -156,6 +157,7 @@ function standingRow(s: Standing, ctx: RowContext): string {
     <span class="standing-main">
       <span class="standing-name"><strong>${esc(s.name)}</strong>${stateChip(s.state)}${watched ? '<span class="heart" aria-label="On My Card">♥</span>' : ''}</span>
       <span class="standing-ratings">${prePostText('R', s.regular)}${prePostText('Q', s.quick)}</span>
+      ${badgeSlot(s.id)}
     </span>
     <span class="points">${esc(s.points)}</span>
     ${canExpand ? `<svg class="toggle-chev" viewBox="0 0 14 8" aria-hidden="true"><path d="M1 1l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>` : ''}`

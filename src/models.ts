@@ -84,6 +84,21 @@ export interface APIMemberGame {
   opponent?: { id?: string; firstName?: string; lastName?: string; outcome?: string }
 }
 
+export interface APITopListDefinition {
+  id: string
+  name?: string
+  ratingSource?: string
+  minAge?: number
+  maxAge?: number
+  gender?: string
+  fideUsaOnly?: boolean
+}
+
+export interface APITopList {
+  reportDate?: string
+  topPlayers?: { ordinal?: number; rating?: number; id?: string; firstName?: string; lastName?: string; stateRep?: string }[]
+}
+
 export interface APIMaxRank {
   ratingSource?: string
   maxRank?: number
@@ -190,6 +205,89 @@ export interface NotableWin extends RatedWin {
   opponentRating: number
   /** The player's own pre-event rating; undefined while they were unrated. */
   playerRating?: number
+}
+
+// MARK: - Top 100 lists (monthly, by rating type / age / gender)
+
+export type TopListRating = 'R' | 'Q' | 'B'
+export const topListRatingTitle: Record<TopListRating, string> = { R: 'Regular', Q: 'Quick', B: 'Blitz' }
+
+export interface TopListDefinition {
+  id: string // "Regular8", "WomensRegular10", "QuickUnder13"
+  name: string // "Age 8", "Girls Age 10", "Quick Under Age 13"
+  rating: TopListRating
+  minAge?: number
+  maxAge?: number
+  isWomen: boolean
+}
+
+export interface TopListEntry {
+  id: string
+  rank: number
+  name: string
+  state?: string
+  rating: number
+}
+
+export interface TopList {
+  definition: TopListDefinition
+  reportDate: Date | null
+  entries: TopListEntry[]
+}
+
+/** Where a player appears on a list: what a badge shows. */
+export interface TopListRank {
+  definition: TopListDefinition
+  rank: number
+}
+
+/** Age group without the rating or gender word: "Age 8", "Under Age 13", "Overall". */
+export function ageGroup(d: TopListDefinition): string {
+  let label = d.name
+  for (const prefix of ['Quick ', 'Blitz ', 'Top Women ', 'Women ', 'Girls ']) {
+    if (label.startsWith(prefix)) label = label.slice(prefix.length)
+  }
+  if (label === 'Women' || label === 'Overall' || !label) return 'Overall'
+  return label.replace('and Over', 'and over')
+}
+
+/** Short label for badges: "Age 8", "Girls Age 10", "US Top 100", "Top Women". */
+export function badgeLabel(d: TopListDefinition): string {
+  const group = ageGroup(d)
+  if (group === 'Overall') return d.isWomen ? 'Top Women' : 'US Top 100'
+  if (d.isWomen) return d.name.startsWith('Girls') ? d.name : `Women ${group}`
+  return group
+}
+
+/** Sort key: youngest first, then Under-N groups, overall, and seniors. */
+export function sortKey(d: TopListDefinition): number {
+  const { minAge, maxAge } = d
+  if (maxAge != null && minAge == null && maxAge < 10) return maxAge // "7 and under"
+  if (minAge != null && minAge === maxAge) return minAge // single age
+  if (maxAge != null && minAge == null) return 100 + maxAge // Under N
+  if (minAge == null && maxAge == null) return 200 // Overall
+  return 300 + (minAge ?? 0) // 50+, 65+
+}
+
+/** Regular/Quick/Blitz over-the-board lists for US players; online lists and "any federation" duplicates are skipped. */
+export function mapTopListDefinitions(api: APITopListDefinition[]): TopListDefinition[] {
+  return api.flatMap((d) => {
+    const rating = d.ratingSource as TopListRating
+    if (d.fideUsaOnly === false || !['R', 'Q', 'B'].includes(rating)) return []
+    return [{ id: d.id, name: d.name ?? d.id, rating, minAge: d.minAge, maxAge: d.maxAge, isWomen: d.gender === 'Female' }]
+  })
+}
+
+export function mapTopList(api: APITopList, definition: TopListDefinition): TopList {
+  return {
+    definition,
+    reportDate: parseDate(api.reportDate),
+    entries: (api.topPlayers ?? []).flatMap((p) =>
+      p.id && p.ordinal != null && p.rating != null
+        ? [{ id: p.id, rank: p.ordinal, name: fullName(p.firstName, p.lastName), state: p.stateRep, rating: p.rating }]
+        : [],
+    ),
+  }
 }
 
 export interface PlayerSummary {

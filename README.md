@@ -19,10 +19,15 @@ for US Chess ratings, running on live data from US Chess.
   reads one section per second (strongest events first, stopping early once nothing
   better is possible). Checked sections are kept in this browser, so later visits are
   instant. Pause is remembered until Resume.
+- **Top 100 by age**: browse US Chess's monthly Top 100 lists (age 7 and under through 18,
+  girls, 50+, 65+; Regular, Quick or Blitz; optionally only your followed player's state).
+  Players on a list get a badge like **🏅 #37 · Age 9** on My Card, profiles, search
+  results, crosstables and Best wins. A profile's badges open that list with the player
+  highlighted.
 - **Search**: by name, 8-digit member ID, or 12-digit event ID, with recent searches
   remembered in this browser.
 
-Coming next, one branch each: Top 100, Upcoming tournaments.
+Coming next: Upcoming tournaments.
 
 ## Run it
 
@@ -54,9 +59,10 @@ forwards them:
 | `src/router.ts` | Hash router. Each screen gets a signal that aborts when you navigate away. |
 | `src/chart.ts` | The Rating History chart (SVG, hover, tap, and arrow keys). |
 | `src/bestwins.ts` | Best wins ranking and the paced, resumable scan. Port of `BestWins` and `bestWinsScan`. |
+| `src/toplists.ts` | Which Top 100 lists each player is on, and the badges. Port of `TopListsIndex.swift`. |
 | `src/store.ts` | IndexedDB cache for data worth keeping across visits. |
 | `src/estimator.ts` | Per-round rating estimates. Port of `RoundRatingEstimator.swift`. |
-| `src/views/` | My Card and player profile, Search, Rating History, Crosstable. |
+| `src/views/` | My Card and player profile, Search, Rating History, Crosstable, Best wins, Top 100. |
 
 US Chess's ratings API isn't officially documented or supported, so its responses
 can change without notice.

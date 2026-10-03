@@ -8,6 +8,7 @@
 
 import { type Progress, scan } from '../bestwins'
 import type { NotableWin } from '../models'
+import { badgeSlot } from '../toplists'
 import { chevron, esc, eventDate, num, prefs } from '../ui'
 
 export function mountBestWins(slot: HTMLElement, memberID: string, pageSignal: AbortSignal) {
@@ -129,6 +130,7 @@ function winRow(win: NotableWin, featured: boolean, open: boolean, memberID: str
       ${featured ? '<span class="trophy" aria-hidden="true">🏆</span>' : ''}
       <span class="win-main">
         <span class="win-name">${esc(win.opponentName)}</span>
+        ${badgeSlot(win.opponentID)}
         <span class="win-event">${esc([win.eventName, eventDate(win.date)].filter(Boolean).join(' · '))}</span>
       </span>
       <span class="win-rating">

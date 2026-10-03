@@ -651,3 +651,39 @@ a.event-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(--hair
 .info-popover ul { padding: 0; margin: 10px 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
 .info-popover p { margin: 0; }
 .info-popover .button { margin-top: 12px; width: 100%; }
+
+/* MARK: Top 100 */
+
+.segmented.three { grid-template-columns: repeat(3, 1fr); }
+.chips.two { grid-template-columns: repeat(2, 1fr); }
+
+.top-badge-slot:empty { display: none; }
+.top-badge-slot.all { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-top: -6px; }
+.top-badge-slot.all::-webkit-scrollbar { display: none; }
+.top-badge-slot.all a { flex: none; }
+.top-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 14%, transparent);
+  white-space: nowrap;
+  width: max-content;
+}
+.top-badge-slot.all .top-badge { font-size: 12px; padding: 4px 9px; }
+.player-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+.list-title { display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; }
+.list-title h2 { font-size: 20px; font-weight: 700; }
+.list-host { display: flex; flex-direction: column; gap: 12px; }
+.top-list { gap: 8px; }
+.top-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 16px; }
+.top-row.highlight { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+.top-row .rank { min-width: 36px; }
+.top-name { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; }
+.top-name strong { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.top-rating { font-weight: 600; font-size: 16px; }

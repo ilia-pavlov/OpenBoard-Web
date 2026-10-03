@@ -1,10 +1,12 @@
 import './styles.css'
 import { startRouter } from './router'
+import { startBadges } from './toplists'
 import { emptyState } from './ui'
 import { crosstableView } from './views/crosstable'
 import { historyView } from './views/history'
 import { myCardView, profileView } from './views/player'
 import { searchView } from './views/search'
+import { top100BrowseView, top100ListView } from './views/top100'
 
 // MARK: - Appearance (System / Light / Dark; dark by default, like the app)
 
@@ -43,14 +45,18 @@ applyAppearance(currentAppearance())
 
 // MARK: - Routes
 
+const app = document.getElementById('app')!
+startBadges(app)
 startRouter(
-  document.getElementById('app')!,
+  app,
   [
     { pattern: /^\/$/, view: myCardView, tab: 'card' },
     { pattern: /^\/search$/, view: searchView, tab: 'search' },
     { pattern: /^\/player\/(\d{8})$/, view: profileView, tab: 'search' },
     { pattern: /^\/player\/(\d{8})\/history$/, view: historyView, tab: 'search' },
     { pattern: /^\/event\/(\d{12})$/, view: crosstableView },
+    { pattern: /^\/top100$/, view: top100BrowseView, tab: 'search' },
+    { pattern: /^\/top100\/([A-Za-z0-9]+)$/, view: top100ListView, tab: 'search' },
   ],
   ({ root }) => {
     root.innerHTML = emptyState('♞', 'Nothing here', 'That page does not exist.') + `<p class="center"><a class="button" href="#/">Go to My Card</a></p>`
