@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "openboard-web",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-03",
+  "assets": {
+    // `npm run build` output. Static files are served directly; the Worker
+    // only runs for the US Chess relay paths.
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "observability": {
+    "enabled": true,
+    "traces": { "enabled": true }
+  }
+}

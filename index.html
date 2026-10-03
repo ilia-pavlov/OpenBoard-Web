@@ -7,12 +7,7 @@
     <meta name="description" content="Fast US Chess ratings: your card, rating history and player search." />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>OpenBoard</title>
-    <script>
-      // Apply the saved appearance before first paint (dark by default, like the app).
-      let a = 'dark'
-      try { const saved = localStorage.getItem('appearance'); if (['dark', 'light', 'system'].includes(saved)) a = saved } catch {}
-      if (a !== 'system') document.documentElement.dataset.theme = a
-    </script>
+    <script src="/theme.js"></script>
   </head>
   <body>
     <header class="topbar">
