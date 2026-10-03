@@ -77,6 +77,8 @@ a { color: inherit; text-decoration: none; }
 button, select, input { font: inherit; color: inherit; }
 h1, h2, p { margin: 0; }
 :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 6px; }
+/* Focus moves to <main> after each navigation; it should never draw a ring around the page. */
+main:focus, main:focus-visible { outline: none; }
 
 .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .muted { color: var(--text-2); }
@@ -96,7 +98,7 @@ h1, h2, p { margin: 0; }
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px max(16px, env(safe-area-inset-left));
+  padding: max(10px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left));
   background: color-mix(in srgb, var(--bg) 82%, transparent);
   backdrop-filter: saturate(1.6) blur(18px);
   -webkit-backdrop-filter: saturate(1.6) blur(18px);
@@ -903,3 +905,7 @@ a.tournament-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(-
 @media (max-width: 640px) {
   main { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
 }
+
+.alert-help { margin: 0; font-size: 13px; line-height: 1.45; color: var(--text-2); padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--gold) 8%, transparent); border: 1px solid color-mix(in srgb, var(--gold) 20%, transparent); }
+.alert-help strong { color: var(--text); }
+.share-icon { width: 12px; height: 15px; vertical-align: -2px; color: var(--teal); }

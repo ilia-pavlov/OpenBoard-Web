@@ -7,7 +7,7 @@ import {
   type SavedTournament, type WatchedPlayer, avatar, chevron, clockDigits, daysAgo, dateRange, emptyState, esc, eventDate,
   prefs, sectionLabel,
 } from '../ui'
-import { type RatingChange, alertsEnabled, checkWatchlist, enableAlerts, lastChecked, watchlistChecked } from '../watchlist'
+import { type RatingChange, alertSupport, alertsEnabled, checkWatchlist, enableAlerts, lastChecked, sendSampleAlert, watchlistChecked } from '../watchlist'
 
 export const watchingView: View = ({ root, signal }) => {
   let editing = false
@@ -52,8 +52,9 @@ export const watchingView: View = ({ root, signal }) => {
           ? `<div class="card alerts-card">
               <label class="toggle-row">
                 <span><strong>Rating alerts</strong><small>A browser notification when a watched player's rating changes. The site checks when you open it (at most every 12 hours) and when you tap ↻.</small></span>
-                <input type="checkbox" role="switch" data-action="alerts" ${alertsEnabled() ? 'checked' : ''} ${'Notification' in window ? '' : 'disabled'}>
+                <input type="checkbox" role="switch" data-action="alerts" aria-describedby="alerts-help" ${alertsEnabled() ? 'checked' : ''} ${alertSupport() === 'available' ? '' : 'disabled'}>
               </label>
+              ${alertHelp()}
               ${checkedAt ? `<small class="muted">Last checked ${new Date(checkedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</small>` : ''}
             </div>`
           : ''
@@ -160,6 +161,11 @@ export const watchingView: View = ({ root, signal }) => {
     if (input.dataset.action !== 'alerts') return
     const on = await enableAlerts(input.checked)
     if (input.checked && !on) message = 'Notifications are blocked for this site. Allow them in your browser settings to get alerts.'
+    // On iPhone the result of the permission prompt is easy to miss: say it, and show a sample.
+    if (on) {
+      message = '🔔 Rating alerts are on. You should see a sample notification now.'
+      void sendSampleAlert()
+    }
     render()
   }
 
@@ -175,6 +181,20 @@ export const watchingView: View = ({ root, signal }) => {
   )
 
   render()
+}
+
+/** Why the switch can't turn on, when it can't. */
+function alertHelp(): string {
+  switch (alertSupport()) {
+    case 'install-on-ios':
+      return `<p id="alerts-help" class="alert-help">On iPhone and iPad, alerts work once OpenBoard is on your Home Screen: tap <strong>Share</strong> <svg class="share-icon" viewBox="0 0 16 20" aria-hidden="true"><path d="M8 1v11M4 5l4-4 4 4M3 9H2v10h12V9h-1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>, then <strong>Add to Home Screen</strong>, and open OpenBoard from there.</p>`
+    case 'blocked':
+      return `<p id="alerts-help" class="alert-help">Notifications are blocked for this site. Allow them in your browser's site settings, then come back.</p>`
+    case 'unsupported':
+      return `<p id="alerts-help" class="alert-help">This browser can't show notifications.</p>`
+    default:
+      return ''
+  }
 }
 
 function savedRow(t: SavedTournament): string {

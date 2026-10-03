@@ -9,7 +9,7 @@ import { historyView } from './views/history'
 import { myCardView, profileView } from './views/player'
 import { searchView } from './views/search'
 import { watchingView } from './views/watching'
-import { checkIfDue } from './watchlist'
+import { checkIfDue, registerServiceWorker } from './watchlist'
 import { top100BrowseView, top100ListView } from './views/top100'
 import { majorEventView, tournamentView } from './views/tournament'
 
@@ -52,6 +52,7 @@ applyAppearance(currentAppearance())
 
 const app = document.getElementById('app')!
 startBadges(app)
+registerServiceWorker()
 checkIfDue()
 startRouter(
   app,
