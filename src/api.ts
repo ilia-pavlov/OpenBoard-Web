@@ -1,7 +1,8 @@
 import { Params, Ratings, fill } from './endpoints'
 import {
-  type APIMaxRank, type APIMember, type APIMemberSection, type APIPage, type APIRatedEvent, type APIStanding,
-  type ChessEvent, type Player, type PlayerSummary, mapEvent, mapPlayer, mapSummary,
+  type APIMaxRank, type APIMember, type APIMemberGame, type APIMemberSection, type APIPage, type APIRatedEvent,
+  type APIStanding, type ChessEvent, type Player, type PlayerSummary, type RatedWin, type RatedWins, mapEvent,
+  mapPlayer, mapRegularWin, mapStanding, mapSummary,
 } from './models'
 
 export class ApiError extends Error {
@@ -147,4 +148,27 @@ export function fetchEvent(id: string, { force = false } = {}): Promise<ChessEve
     events.set(id, request)
   }
   return request
+}
+
+/** Every Regular game a player has (RatingSource=R includes dual-rated), and which were wins. */
+export async function fetchRegularWins(memberID: string): Promise<RatedWins> {
+  // Very active players have well over 1,000 games, hence the higher page cap.
+  const games = await collectPages(100, 50, (offset, size) =>
+    get<APIPage<APIMemberGame>>(fill(Ratings.memberGames, { memberID }), {
+      [Params.ratingSource]: 'R',
+      [Params.size]: String(size),
+      [Params.offset]: String(offset),
+    }),
+  )
+  return { gameCount: games.length, wins: games.map(mapRegularWin).filter((w): w is RatedWin => w != null) }
+}
+
+/** Each player's Regular rating going into one section, by member ID. */
+export async function fetchRegularPreRatings(eventID: string, section: number): Promise<Record<string, number>> {
+  const ratings: Record<string, number> = {}
+  for (const [i, s] of (await standings(eventID, section)).entries()) {
+    const standing = mapStanding(s, i)
+    if (standing.regular?.pre != null) ratings[standing.id] = standing.regular.pre
+  }
+  return ratings
 }

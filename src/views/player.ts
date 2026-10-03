@@ -11,6 +11,7 @@ import {
   signed, skeleton, sparkline,
 } from '../ui'
 import type { View } from '../router'
+import { mountBestWins } from './bestwins-card'
 
 export const myCardView: View = (ctx) => {
   const id = prefs.primary
@@ -38,6 +39,7 @@ function loadPlayer(ctx: Parameters<View>[0], id: string, mode: 'mycard' | 'prof
       if (signal.aborted) return
       document.title = `${player.name} · OpenBoard`
       root.innerHTML = playerPage(player, mode)
+      mountBestWins(root.querySelector<HTMLElement>('.best-wins-slot')!, player.id, signal)
     },
     (error: Error) => {
       if (signal.aborted) return
@@ -99,6 +101,7 @@ function playerPage(player: Player, mode: 'mycard' | 'profile'): string {
 
     ${lastEvent && lastDelta ? justRated(player) : ''}
     ${rankingCards(player.ranking)}
+    <section class="best-wins-slot" aria-label="Best wins"></section>
 
     ${
       player.events.length

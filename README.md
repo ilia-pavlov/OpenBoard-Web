@@ -13,10 +13,16 @@ for US Chess ratings, running on live data from US Chess.
   player outlined and expanded. Big events have a section picker. Tap a player to see each
   round: the opponent, their rating, and an **estimated** rating change for both players.
   US Chess only publishes the event total, so the estimates are scaled to add up to it.
+- **Best wins**: on My Card and every profile, the highest-rated opponents a player has
+  beaten in Regular play, **rated as they were on the day of the game**, and how far above
+  the player that was. Tap a win to open the opponent or the tournament. The first check
+  reads one section per second (strongest events first, stopping early once nothing
+  better is possible). Checked sections are kept in this browser, so later visits are
+  instant. Pause is remembered until Resume.
 - **Search**: by name, 8-digit member ID, or 12-digit event ID, with recent searches
   remembered in this browser.
 
-Coming next, one branch each: Best wins, Top 100, Upcoming tournaments.
+Coming next, one branch each: Top 100, Upcoming tournaments.
 
 ## Run it
 
@@ -47,6 +53,8 @@ forwards them:
 | `src/api.ts` | Fetching: paging, request de-duplication, and waiting out rate limits (429). |
 | `src/router.ts` | Hash router. Each screen gets a signal that aborts when you navigate away. |
 | `src/chart.ts` | The Rating History chart (SVG, hover, tap, and arrow keys). |
+| `src/bestwins.ts` | Best wins ranking and the paced, resumable scan. Port of `BestWins` and `bestWinsScan`. |
+| `src/store.ts` | IndexedDB cache for data worth keeping across visits. |
 | `src/estimator.ts` | Per-round rating estimates. Port of `RoundRatingEstimator.swift`. |
 | `src/views/` | My Card and player profile, Search, Rating History, Crosstable. |
 

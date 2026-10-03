@@ -146,4 +146,12 @@ export const prefs = {
   clearRecents() {
     write('recentSearches', null)
   },
+  /** Members whose best-wins scan the user paused; stays paused until Resume. */
+  isBestWinsPaused(memberID: string): boolean {
+    return read<string[]>('bestWins.paused', []).includes(memberID)
+  },
+  setBestWinsPaused(memberID: string, paused: boolean) {
+    const others = read<string[]>('bestWins.paused', []).filter((id) => id !== memberID)
+    write('bestWins.paused', paused ? [...others, memberID] : others)
+  },
 }

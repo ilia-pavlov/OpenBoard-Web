@@ -75,6 +75,15 @@ interface APIRoundOutcome {
   opponentLastName?: string
 }
 
+/** One game from `members/{id}/games`: who played whom and the result. No ratings: those come from standings. */
+export interface APIMemberGame {
+  section?: { number?: number }
+  event?: { id?: string; name?: string; startDate?: string; endDate?: string }
+  ratingSystem?: string // "R" regular, "D" dual (regular + quick), "Q", "B", "OR", …
+  player?: { outcome?: string }
+  opponent?: { id?: string; firstName?: string; lastName?: string; outcome?: string }
+}
+
 export interface APIMaxRank {
   ratingSource?: string
   maxRank?: number
@@ -158,6 +167,29 @@ export interface ChessEvent {
   name: string
   date: Date | null
   sections: EventSection[]
+}
+
+/** A rated Regular win (dual-rated included), before the opponent's rating is known. */
+export interface RatedWin {
+  opponentID: string
+  opponentName: string
+  eventID: string
+  eventName: string
+  section: number
+  date: Date | null
+}
+
+/** A player's Regular games: how many, and which were wins. */
+export interface RatedWins {
+  gameCount: number
+  wins: RatedWin[]
+}
+
+/** A win with both players' Regular ratings going into that event. */
+export interface NotableWin extends RatedWin {
+  opponentRating: number
+  /** The player's own pre-event rating; undefined while they were unrated. */
+  playerRating?: number
 }
 
 export interface PlayerSummary {
@@ -315,6 +347,24 @@ export function mapEvent(api: APIRatedEvent, standings: Map<number, APIStanding[
         name: ref.name || `Section ${ref.number}`,
         players: (standings.get(ref.number) ?? []).map(mapStanding),
       })),
+  }
+}
+
+/** A Regular-rated win (regular or dual-rated game), or undefined for anything else. */
+export function mapRegularWin(game: APIMemberGame): RatedWin | undefined {
+  const opponentID = game.opponent?.id
+  const eventID = game.event?.id
+  const section = game.section?.number
+  if (game.player?.outcome !== 'Win' || !['R', 'D'].includes(game.ratingSystem ?? '') || !opponentID || !eventID || section == null) {
+    return undefined
+  }
+  return {
+    opponentID,
+    opponentName: fullName(game.opponent?.firstName, game.opponent?.lastName),
+    eventID,
+    eventName: game.event?.name ? capitalizedIfShouty(game.event.name) : `Event ${eventID}`,
+    section,
+    date: parseDate(game.event?.endDate ?? game.event?.startDate),
   }
 }
 
