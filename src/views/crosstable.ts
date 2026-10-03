@@ -150,12 +150,12 @@ interface RowContext {
 
 function standingRow(s: Standing, ctx: RowContext): string {
   const canExpand = s.rounds.length > 0
-  const watched = s.id === prefs.primary
+  const watched = prefs.isWatching(s.id)
   const classes = ['card', 'standing', s.id === ctx.highlight ? 'highlight' : watched ? 'watched' : '', ctx.expanded ? 'expanded' : '']
   const header = `
     <span class="rank${s.rank <= 3 ? ' podium' : ''}">${s.rank}</span>
     <span class="standing-main">
-      <span class="standing-name"><strong>${esc(s.name)}</strong>${stateChip(s.state)}${watched ? '<span class="heart" aria-label="On My Card">♥</span>' : ''}</span>
+      <span class="standing-name"><strong>${esc(s.name)}</strong>${stateChip(s.state)}${watched ? '<span class="heart" aria-label="Watching">♥</span>' : ''}</span>
       <span class="standing-ratings">${prePostText('R', s.regular)}${prePostText('Q', s.quick)}</span>
       ${badgeSlot(s.id)}
     </span>

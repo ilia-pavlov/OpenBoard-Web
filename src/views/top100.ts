@@ -183,7 +183,6 @@ function listHTML(list: TopList, { highlight, stateFilter }: { highlight?: strin
     .filter(Boolean)
     .join(' · ')
   const title = `${d.isWomen && !d.name.startsWith('Girls') ? 'Women · ' : ''}${d.name} · ${topListRatingTitle[d.rating]}`
-  const primary = prefs.primary
   return `
     <div class="list-title">
       <h2>${esc(title)}</h2>
@@ -195,7 +194,7 @@ function listHTML(list: TopList, { highlight, stateFilter }: { highlight?: strin
             .map(
               (e) => `<a class="card top-row${e.id === highlight ? ' highlight' : ''}" href="#/player/${esc(e.id)}" data-member="${esc(e.id)}">
                 <span class="rank${e.rank <= 3 ? ' podium' : ''}">${e.rank}</span>
-                <span class="top-name"><strong>${esc(e.name)}</strong>${stateChip(e.state)}${e.id === primary ? '<span class="heart" aria-label="On My Card">♥</span>' : ''}</span>
+                <span class="top-name"><strong>${esc(e.name)}</strong>${stateChip(e.state)}${prefs.isWatching(e.id) ? '<span class="heart" aria-label="Watching">♥</span>' : ''}</span>
                 <span class="top-rating mono">${e.rating}</span>
                 ${chevron}
               </a>`,

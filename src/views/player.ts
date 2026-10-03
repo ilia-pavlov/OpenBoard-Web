@@ -12,6 +12,7 @@ import {
 } from '../ui'
 import type { View } from '../router'
 import { mountBestWins } from './bestwins-card'
+import { snapshot } from '../watchlist'
 import { badgeSlot } from '../toplists'
 
 export const myCardView: View = (ctx) => {
@@ -21,7 +22,7 @@ export const myCardView: View = (ctx) => {
       <div class="onboarding">
         <div class="crown" aria-hidden="true">♛</div>
         <h2>Welcome to OpenBoard</h2>
-        <p>Follow a US Chess player to build your card. Search by name or enter an 8-digit member ID.</p>
+        <p>Watch a US Chess player to build your card: search by name or 8-digit member ID, open their profile, and tap ♥ Watch.</p>
         <a class="button prominent" href="#/search">Find a player</a>
       </div>`
     return
@@ -33,12 +34,20 @@ export const profileView: View = (ctx, [id]) => loadPlayer(ctx, id, 'profile')
 
 function loadPlayer(ctx: Parameters<View>[0], id: string, mode: 'mycard' | 'profile', force = false) {
   const { root, signal } = ctx
+  let latest: Player | undefined
   root.innerHTML = `<h1 class="screen-title">${mode === 'mycard' ? 'My Card' : 'Player'}</h1>${skeleton([28, 300, 130, 90, 72, 72, 72])}`
 
   fetchPlayer(id, { force }).then(
     (player) => {
       if (signal.aborted) return
       document.title = `${player.name} · OpenBoard`
+      // Keep the watched row's name and rating current (it may have been added before they loaded).
+      if (prefs.isWatching(player.id)) {
+        const row = prefs.watched.find((r) => r.memberID === player.id)!
+        const fresh = snapshot(player)
+        prefs.updateWatched(player.id, { name: fresh.name, state: fresh.state, lastKnownRegular: row.lastKnownRegular ?? fresh.lastKnownRegular, lastRatedDate: row.lastRatedDate ?? fresh.lastRatedDate })
+      }
+      latest = player
       root.innerHTML = playerPage(player, mode)
       mountBestWins(root.querySelector<HTMLElement>('.best-wins-slot')!, player.id, signal)
     },
@@ -60,22 +69,20 @@ function loadPlayer(ctx: Parameters<View>[0], id: string, mode: 'mycard' | 'prof
           setTimeout(() => delete target.dataset.copied, 1500)
         })
         break
-      case 'follow':
-        prefs.primary = id
-        target.outerHTML = followButton(id)
-        break
-      case 'unfollow':
-        prefs.primary = null
-        location.hash = '#/search'
+      case 'watch':
+        if (!latest) break
+        prefs.toggleWatch(snapshot(latest))
+        target.outerHTML = watchButton(id)
         break
     }
   }
 }
 
-function followButton(id: string): string {
-  return prefs.primary === id
-    ? `<a class="button subtle" href="#/">✓ On My Card</a>`
-    : `<button class="button" type="button" data-action="follow">Show on My Card</button>`
+/** ♥ Watch / ♥ Watching; the first player watched becomes My Card. */
+function watchButton(id: string): string {
+  const watching = prefs.isWatching(id)
+  const label = watching ? (prefs.primary === id ? '♛ My Card · Watching' : '♥ Watching') : '♡ Watch'
+  return `<button class="button${watching ? ' subtle' : ''}" type="button" data-action="watch" aria-pressed="${watching}">${label}</button>`
 }
 
 function playerPage(player: Player, mode: 'mycard' | 'profile'): string {
@@ -87,7 +94,7 @@ function playerPage(player: Player, mode: 'mycard' | 'profile'): string {
   return `
     <div class="title-row">
       <h1 class="screen-title">${esc(title)}</h1>
-      ${mode === 'profile' ? followButton(player.id) : `<button class="link-button" type="button" data-action="unfollow">Change player</button>`}
+      ${mode === 'profile' ? watchButton(player.id) : `<a class="link-button" href="#/watching">Watching</a>`}
     </div>
     <div class="id-row">
       <button class="copy-id" type="button" data-action="copy-id" aria-label="Copy member ID ${player.id}">ID ${player.id}</button>

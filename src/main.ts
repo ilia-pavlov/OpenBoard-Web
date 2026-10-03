@@ -7,6 +7,8 @@ import { eventsView } from './views/events'
 import { historyView } from './views/history'
 import { myCardView, profileView } from './views/player'
 import { searchView } from './views/search'
+import { watchingView } from './views/watching'
+import { checkIfDue } from './watchlist'
 import { top100BrowseView, top100ListView } from './views/top100'
 import { majorEventView, tournamentView } from './views/tournament'
 
@@ -49,6 +51,7 @@ applyAppearance(currentAppearance())
 
 const app = document.getElementById('app')!
 startBadges(app)
+checkIfDue()
 startRouter(
   app,
   [
@@ -60,6 +63,7 @@ startRouter(
     { pattern: /^\/events$/, view: eventsView, tab: 'events' },
     { pattern: /^\/tournament\/([\w%.-]+)$/, view: tournamentView, tab: 'events' },
     { pattern: /^\/major$/, view: majorEventView, tab: 'events' },
+    { pattern: /^\/watching$/, view: watchingView, tab: 'watching' },
     { pattern: /^\/top100$/, view: top100BrowseView, tab: 'search' },
     { pattern: /^\/top100\/([A-Za-z0-9]+)$/, view: top100ListView, tab: 'search' },
   ],

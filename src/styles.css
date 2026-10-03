@@ -128,10 +128,42 @@ h1, h2, p { margin: 0; }
   line-height: 1;
 }
 
-@media (max-width: 420px) {
-  .brand-text, .brand { font-size: 0; }
-  .brand-mark { font-size: 24px; }
-  .tabs a { padding: 7px 11px; }
+.tab-icon { display: none; }
+.appearance { margin-left: auto; }
+.tabs + .appearance { margin-left: 0; }
+
+/* Phones: the tabs move to a bottom bar, like the app's tab bar. */
+@media (max-width: 640px) {
+  /* A blurred header would become the bar's containing block and pin it to the header. */
+  .topbar { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--bg); }
+  .tabs {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+    margin: 0;
+    gap: 0;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    background: color-mix(in srgb, var(--bg) 86%, transparent);
+    backdrop-filter: saturate(1.6) blur(18px);
+    -webkit-backdrop-filter: saturate(1.6) blur(18px);
+    border-top: 1px solid var(--hairline);
+  }
+  .tabs a {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 0;
+    border-radius: 10px;
+    font-size: 11px;
+  }
+  .tabs a[aria-current] { background: none; }
+  .tab-icon { display: block; font-size: 20px; line-height: 1.1; }
+  .tabs + .appearance { margin-left: auto; }
+  main { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
 }
 
 /* MARK: Layout */
@@ -779,3 +811,65 @@ a.tournament-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(-
 .contact-links { display: flex; flex-direction: column; gap: 8px; font-size: 15px; }
 .contact-links a { color: var(--gold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .external-link { align-self: center; color: var(--gold); font-weight: 600; font-size: 14px; padding: 4px; }
+
+/* MARK: Watching */
+
+.title-actions { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+.icon-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--hairline);
+  background: var(--card);
+  color: var(--gold);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  flex: none;
+}
+.icon-button.small { width: 30px; height: 30px; font-size: 15px; color: var(--text-2); border-color: transparent; background: none; }
+.icon-button:disabled { opacity: 0.35; cursor: default; }
+.icon-button.spinning { animation: spin 0.9s linear infinite; }
+.watch-item + .watch-item { border-top: 1px solid var(--hairline); }
+.watch-row { display: flex; align-items: center; gap: 4px; padding-right: 8px; }
+.watch-link { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 12px 6px 12px 14px; }
+.watch-link:hover strong { color: var(--gold); }
+.watch-link .player-text small { font-size: 12px; color: var(--text-2); }
+.watch-link > .player-text > small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.avatar.gold { color: var(--gold); background: color-mix(in srgb, var(--gold) 18%, transparent); border-color: color-mix(in srgb, var(--gold) 45%, transparent); }
+.crown { color: var(--gold); font-size: 13px; }
+.reorder { display: flex; gap: 2px; }
+.button.danger { color: var(--down); }
+.alerts-card { padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.toggle-row { display: flex; align-items: center; gap: 14px; cursor: pointer; }
+.toggle-row strong { display: block; font-size: 15px; }
+.toggle-row small { display: block; font-size: 12px; color: var(--text-2); margin-top: 2px; }
+.toggle-row input {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  width: 46px;
+  height: 28px;
+  flex: none;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--hairline);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.toggle-row input::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+}
+.toggle-row input:checked { background: var(--gold); }
+.toggle-row input:checked::after { transform: translateX(18px); }
+.toggle-row input:disabled { opacity: 0.4; cursor: not-allowed; }
+.toggle-row input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }

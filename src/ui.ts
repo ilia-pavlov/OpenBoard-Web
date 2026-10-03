@@ -130,12 +130,48 @@ function write(key: string, value: unknown) {
 }
 
 export const prefs = {
+  /** Followed players, in display order. */
+  get watched(): WatchedPlayer[] {
+    const rows = read<WatchedPlayer[]>('watched', [])
+    // Before Watching existed, My Card was a single saved member ID.
+    const legacy = read<string | null>('primaryMemberID', null)
+    if (legacy && !rows.some((r) => r.memberID === legacy)) {
+      rows.unshift({ memberID: legacy, name: `Member ${legacy}`, isPrimary: !rows.some((r) => r.isPrimary) })
+      write('watched', rows)
+    }
+    if (legacy) write('primaryMemberID', null)
+    return rows
+  },
+  set watched(rows: WatchedPlayer[]) {
+    write('watched', rows)
+  },
   /** The member shown on My Card. */
   get primary(): string | null {
-    return read<string | null>('primaryMemberID', null)
+    return this.watched.find((r) => r.isPrimary)?.memberID ?? null
   },
-  set primary(id: string | null) {
-    write('primaryMemberID', id)
+  isWatching(memberID: string): boolean {
+    return this.watched.some((r) => r.memberID === memberID)
+  },
+  /** Watch or unwatch; the first player watched becomes primary (My Card). Returns whether now watching. */
+  toggleWatch(player: Omit<WatchedPlayer, 'isPrimary'>): boolean {
+    const rows = this.watched
+    if (rows.some((r) => r.memberID === player.memberID)) {
+      const rest = rows.filter((r) => r.memberID !== player.memberID)
+      // Unfollowing My Card's player hands the crown to the next one.
+      if (rest.length && !rest.some((r) => r.isPrimary)) rest[0] = { ...rest[0], isPrimary: true }
+      this.watched = rest
+      return false
+    }
+    this.watched = [...rows, { ...player, isPrimary: rows.length === 0 }]
+    return true
+  },
+  setPrimary(memberID: string) {
+    const rows = this.watched.map((r) => ({ ...r, isPrimary: r.memberID === memberID }))
+    // My players come first, like the app's sections.
+    this.watched = [...rows.filter((r) => r.isPrimary), ...rows.filter((r) => !r.isPrimary)]
+  },
+  updateWatched(memberID: string, changes: Partial<WatchedPlayer>) {
+    this.watched = this.watched.map((r) => (r.memberID === memberID ? { ...r, ...changes } : r))
   },
   get recents(): string[] {
     return read<string[]>('recentSearches', [])
@@ -173,12 +209,26 @@ export const prefs = {
   isSaved(id: string): boolean {
     return this.savedTournaments.some((t) => t.id === id)
   },
+  removeSaved(id: string) {
+    write('savedTournaments', this.savedTournaments.filter((t) => t.id !== id))
+  },
   toggleSaved(t: SavedTournament): boolean {
     const others = this.savedTournaments.filter((s) => s.id !== t.id)
     const saving = others.length === this.savedTournaments.length
     write('savedTournaments', saving ? [...others, t].sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? '')) : others)
     return saving
   },
+}
+
+export interface WatchedPlayer {
+  memberID: string
+  name: string
+  state?: string
+  isPrimary: boolean
+  lastKnownRegular?: number
+  lastKnownQuick?: number
+  /** "2026-10-02": the last event rated, as of the last check. */
+  lastRatedDate?: string
 }
 
 export interface SavedLocation {

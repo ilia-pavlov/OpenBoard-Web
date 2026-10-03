@@ -1,7 +1,6 @@
-// Events: US Chess tournaments near you (distance, date and type filters),
-// the nationwide list of major events, and tournaments saved for later.
-// Port of UpcomingTournamentsSection (EventsView.swift) and the Watching
-// tab's saved tournaments.
+// Events: US Chess tournaments near you (distance, date and type filters) and
+// the nationwide list of major events. Port of UpcomingTournamentsSection
+// (EventsView.swift). Saved tournaments are listed in Watching, as in the app.
 
 import { LocationError, currentLocation } from '../location'
 import type { View } from '../router'
@@ -10,7 +9,7 @@ import {
   type MajorEvent, type Radius, type TournamentKind, type TournamentListing, type UpcomingWindow, fetchMajorEvents,
   fetchUpcoming, kinds, majorEventID, matchesKind, occursIn, radii, windowRange, windows,
 } from '../tournaments'
-import { type SavedTournament, chevron, dateRange, emptyState, errorCard, esc, prefs, sectionLabel, skeleton } from '../ui'
+import { chevron, dateRange, emptyState, errorCard, esc, prefs, sectionLabel, skeleton } from '../ui'
 
 type Scope = 'near' | 'majors'
 
@@ -56,7 +55,6 @@ export const eventsView: View = ({ root, params, signal }) => {
     const location = prefs.location
     const radius = prefs.radius as Radius
     body().innerHTML = `
-      ${savedSection()}
       ${state.editingLocation ? locationForm(location?.origin) : locationRow(location?.origin)}
       <div class="chips">
         ${chip('radius', '◎', true, `${radius} mi`, radii.map((r) => [String(r), `Within ${r} mi`]), String(radius))}
@@ -224,23 +222,6 @@ export const eventsView: View = ({ root, params, signal }) => {
       <p class="muted small">“Use my location” asks your browser for your location and looks up the city with OpenStreetMap.</p>
     </form>`
   }
-}
-
-function savedSection(): string {
-  const saved = prefs.savedTournaments.filter((t) => !t.endDate || t.endDate >= new Date().toISOString().slice(0, 10))
-  if (!saved.length) return ''
-  return `${sectionLabel('Saved')}<div class="card list">${saved.map(savedRow).join('')}</div>`
-}
-
-function savedRow(t: SavedTournament): string {
-  const start = t.startDate ? new Date(`${t.startDate}T00:00`) : null
-  const end = t.endDate ? new Date(`${t.endDate}T00:00`) : null
-  const when = start ? (end && end > start ? dateRange(start, end) : start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })) : ''
-  return `<a class="list-row" href="#/tournament${esc(t.id)}">
-    <span class="bookmark" aria-hidden="true">🔖</span>
-    <span class="player-text"><strong>${esc(t.name)}</strong><small>${esc([when, t.location].filter(Boolean).join(' · '))}</small></span>
-    ${chevron}
-  </a>`
 }
 
 function chip(key: string, icon: string, active: boolean, title: string, options: [string, string][], value: string): string {

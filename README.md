@@ -30,6 +30,13 @@ for US Chess ratings, running on live data from US Chess.
   a venue map with **Directions**, a **Register** button, **Save** for later, organizer
   contacts, and the full announcement as the organizer formatted it, with a **Copy**
   button that keeps each link's address.
+- **Watching**: follow your kid, rivals and teammates with **♥ Watch** on any profile
+  (the first player watched becomes My Card). Watching lists saved tournaments, My
+  players and Rivals & friends, with each rating, when they were last rated, and Top 100
+  badges. Make primary, Unfollow and reorder from there. **Rating alerts** are browser
+  notifications when a watched player's rating changes. A website can't check in the
+  background like the app, so it checks when you open it (at most every 12 hours) and
+  when you tap ↻.
 - **Search**: by name, 8-digit member ID, or 12-digit event ID, with recent searches
   remembered in this browser.
 
@@ -74,9 +81,10 @@ same-origin paths, and something on the server side forwards them:
 | `src/tournaments.ts` | Upcoming tournaments: listings, announcements and the Plan Ahead Calendar, parsed from new.uschess.org. Port of `TournamentsService.swift`. |
 | `src/announcement.ts` | Makes an organizer's announcement HTML safe to show (allowlist) and builds the Copy text. |
 | `src/location.ts` | "Use my location" and distances. |
+| `src/watchlist.ts` | Checks watched players for rating changes and sends alerts. Port of `RefreshScheduler.swift`. |
 | `src/store.ts` | IndexedDB cache for data worth keeping across visits. |
 | `src/estimator.ts` | Per-round rating estimates. Port of `RoundRatingEstimator.swift`. |
-| `src/views/` | My Card and player profile, Search, Rating History, Crosstable, Best wins, Top 100, Events, Tournament. |
+| `src/views/` | My Card and player profile, Search, Rating History, Crosstable, Best wins, Top 100, Events, Tournament, Watching. |
 
 ## Other services
 
