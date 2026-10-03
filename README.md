@@ -20,7 +20,7 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-`npm run build` typechecks and builds a static site into `dist/`.
+`npm test` runs the unit tests. `npm run build` typechecks and builds a static site into `dist/`.
 
 ## Why there's a relay
 

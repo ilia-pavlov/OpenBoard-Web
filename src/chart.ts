@@ -26,7 +26,7 @@ const pad = { top: 22, right: 14, bottom: 28, left: 46 }
 const directionOf = (e: ChartEntry) => (e.post > e.pre ? 'up' : e.post < e.pre ? 'down' : 'even')
 
 /** Y range with a little headroom; never flat. */
-function yDomain(entries: ChartEntry[]): [number, number] {
+export function yDomain(entries: ChartEntry[]): [number, number] {
   const values = entries.flatMap((e) => [e.pre, e.post])
   const lo = Math.min(...values)
   const hi = Math.max(...values)
@@ -36,7 +36,7 @@ function yDomain(entries: ChartEntry[]): [number, number] {
 }
 
 /** Round tick values (~4) inside the domain. */
-function ticks([lo, hi]: [number, number]): number[] {
+export function ticks([lo, hi]: [number, number]): number[] {
   const raw = (hi - lo) / 4
   const mag = 10 ** Math.floor(Math.log10(raw))
   const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) ?? raw
@@ -46,13 +46,13 @@ function ticks([lo, hi]: [number, number]): number[] {
 }
 
 /** Up to four evenly spaced labelled ticks, always including the oldest and newest event. */
-function axisIndices(n: number): number[] {
+export function axisIndices(n: number): number[] {
   if (n <= 4) return [...Array(n).keys()]
   return [0, 1, 2, 3].map((i) => Math.round((i * (n - 1)) / 3))
 }
 
 /** Monotone cubic path through the points (no overshoot between events). */
-function monotonePath(xs: number[], ys: number[]): string {
+export function monotonePath(xs: number[], ys: number[]): string {
   const n = xs.length
   if (n === 1) return `M${xs[0]},${ys[0]}`
   const dx = xs.slice(1).map((x, i) => x - xs[i])
