@@ -484,3 +484,89 @@ main {
 .legend .lg.down { color: var(--down); }
 .legend .lg.even { color: var(--even); }
 .legend .hint { color: var(--text-3); }
+
+/* MARK: Crosstable */
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.event-header { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.event-title { font-size: 24px; font-weight: 800; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.copy-id.inline { padding: 0; font-size: inherit; letter-spacing: 0.02em; font-weight: 500; }
+.small-title { font-size: 24px; }
+
+.section-picker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  cursor: pointer;
+}
+.section-picker:focus-within { outline: 2px solid var(--gold); outline-offset: 2px; }
+.section-picker select { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.picker-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.picker-count { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-2); }
+.picker-name { font-weight: 600; font-size: 15px; }
+.star { color: var(--gold); font-size: 12px; }
+.updown { color: var(--text-2); font-size: 14px; }
+
+.standing { padding: 14px; }
+.standing.highlight { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+.standing.watched { border-color: color-mix(in srgb, var(--gold) 45%, var(--hairline)); }
+.standing-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+div.standing-header { cursor: default; }
+.rank { min-width: 30px; text-align: center; font-weight: 700; font-size: 17px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.rank.podium { color: var(--gold); }
+.standing-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.standing-name { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.standing-name strong { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.heart { color: var(--gold); font-size: 12px; }
+.standing-ratings { display: flex; flex-wrap: wrap; column-gap: 10px; row-gap: 2px; }
+.prepost { display: inline-flex; align-items: baseline; gap: 4px; font-size: 12px; color: var(--text-2); white-space: nowrap; }
+.prepost b { font-size: 10px; color: var(--text-3); }
+.prepost span:last-child:not(.mono) { font-size: 11px; font-weight: 700; }
+.points { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.toggle-chev { width: 12px; height: 8px; color: var(--text-3); flex: none; transition: transform 0.2s ease; }
+.expanded .toggle-chev { transform: rotate(180deg); }
+
+.games { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--hairline); }
+.game { display: flex; align-items: center; gap: 12px; }
+.result-chip {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-2);
+  background: color-mix(in srgb, var(--text-2) 16%, transparent);
+}
+.result-chip.W { color: var(--up); background: color-mix(in srgb, var(--up) 16%, transparent); }
+.result-chip.L { color: var(--down); background: color-mix(in srgb, var(--down) 16%, transparent); }
+.result-chip.D { color: var(--teal); background: color-mix(in srgb, var(--teal) 16%, transparent); }
+.game-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 12px; font-weight: 500; }
+.game-round { color: var(--text-2); display: flex; gap: 6px; align-items: baseline; }
+.game-round i { font-style: normal; font-size: 9px; font-weight: 700; color: var(--text-3); letter-spacing: 0.04em; }
+.game-opponent { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.game-opponent a:hover { color: var(--gold); }
+.game-estimates { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: none; font-variant-numeric: tabular-nums; }
+.estimate.mine { font-size: 12px; font-weight: 700; }
+.estimate.theirs { font-size: 11px; font-weight: 600; }
+.footnote { font-size: 11px; color: var(--text-3); }
+.profile-link { align-self: flex-end; display: inline-flex; align-items: center; gap: 4px; color: var(--gold); font-size: 12px; font-weight: 600; }
+.profile-link .chev { color: var(--gold); width: 6px; height: 10px; }
+
+a.event-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(--hairline)); }

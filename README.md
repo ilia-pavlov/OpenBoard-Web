@@ -9,9 +9,14 @@ for US Chess ratings, running on live data from US Chess.
   a red ▼ means it went down, and a gray ● means no change. Filter by Regular or Quick,
   number of events, time period, or result. Filters are kept in the URL, so you can
   bookmark or share a filtered view.
-- **Search**: by name or 8-digit member ID, with recent searches remembered in this browser.
+- **Crosstables**: every event row opens its crosstable at the right section, with the
+  player outlined and expanded. Big events have a section picker. Tap a player to see each
+  round: the opponent, their rating, and an **estimated** rating change for both players.
+  US Chess only publishes the event total, so the estimates are scaled to add up to it.
+- **Search**: by name, 8-digit member ID, or 12-digit event ID, with recent searches
+  remembered in this browser.
 
-Coming next, one branch each: Crosstables, Best wins, Top 100, Upcoming tournaments.
+Coming next, one branch each: Best wins, Top 100, Upcoming tournaments.
 
 ## Run it
 
@@ -42,7 +47,8 @@ forwards them:
 | `src/api.ts` | Fetching: paging, request de-duplication, and waiting out rate limits (429). |
 | `src/router.ts` | Hash router. Each screen gets a signal that aborts when you navigate away. |
 | `src/chart.ts` | The Rating History chart (SVG, hover, tap, and arrow keys). |
-| `src/views/` | My Card and player profile, Search, Rating History. |
+| `src/estimator.ts` | Per-round rating estimates. Port of `RoundRatingEstimator.swift`. |
+| `src/views/` | My Card and player profile, Search, Rating History, Crosstable. |
 
 US Chess's ratings API isn't officially documented or supported, so its responses
 can change without notice.

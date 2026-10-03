@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  type APIMember, type APIMemberSection, capitalizedIfShouty, classTitle, isProvisional, mapPlayer, mapSummary,
-  parseDate, peakRegular, topPercent,
+  type APIMember, type APIMemberSection, capitalizedIfShouty, classTitle, isProvisional, mapEvent, mapPlayer,
+  mapStanding, mapSummary, parseDate, peakRegular, topPercent,
 } from './models'
 
 const member: APIMember = {
@@ -112,5 +112,50 @@ describe('helpers', () => {
 
   it('summarizes a member for search results', () => {
     expect(mapSummary(member)).toEqual({ id: '12345678', name: 'Ilia Pavlov', state: 'CA', regular: 1450 })
+  })
+})
+
+describe('mapStanding', () => {
+  const standing = mapStanding(
+    {
+      ordinal: 2,
+      memberId: '99000001',
+      firstName: 'ALEX',
+      lastName: 'RIVERA',
+      score: 2.5,
+      ratings: [{ ratingSystem: 'R', preRating: 1500, postRating: 1512 }],
+      roundOutcomes: [
+        { roundNumber: 2, outcome: 'Loss', color: 'Black', opponentOrdinal: 1, opponentFirstName: 'SAM', opponentLastName: 'TAYLOR' },
+        { roundNumber: 1, outcome: 'WinForfeit', color: 'Unknown', opponentOrdinal: 0 },
+      ],
+    },
+    0,
+  )
+
+  it('formats whole scores with one decimal', () => {
+    expect(standing.points).toBe('2.5')
+    expect(mapStanding({ score: 3 }, 0).points).toBe('3.0')
+  })
+
+  it('reads the regular rating from standings, which label it ratingSystem', () => {
+    expect(standing.regular).toEqual({ pre: 1500, post: 1512, games: undefined })
+  })
+
+  it('sorts rounds and treats forfeits as unplayed with no opponent', () => {
+    expect(standing.rounds).toEqual([
+      { round: 1, symbol: '–', color: 'Unknown', opponentRank: undefined, opponentName: undefined },
+      { round: 2, symbol: 'L', color: 'Black', opponentRank: 1, opponentName: 'Sam Taylor' },
+    ])
+  })
+})
+
+describe('mapEvent', () => {
+  it('orders sections by number and names unnamed ones', () => {
+    const event = mapEvent(
+      { id: '202610020313', name: 'KNIGHTS OF CYPRESS', endDate: '2026-10-02', sections: [{ number: 2, name: 'B' }, { number: 1 }] },
+      new Map([[1, [{ ordinal: 1, memberId: '1' }]]]),
+    )
+    expect(event.name).toBe('Knights Of Cypress')
+    expect(event.sections.map((s) => [s.number, s.name, s.players.length])).toEqual([[1, 'Section 1', 1], [2, 'B', 0]])
   })
 })

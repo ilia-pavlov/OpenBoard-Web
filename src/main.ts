@@ -1,6 +1,7 @@
 import './styles.css'
 import { startRouter } from './router'
 import { emptyState } from './ui'
+import { crosstableView } from './views/crosstable'
 import { historyView } from './views/history'
 import { myCardView, profileView } from './views/player'
 import { searchView } from './views/search'
@@ -49,6 +50,7 @@ startRouter(
     { pattern: /^\/search$/, view: searchView, tab: 'search' },
     { pattern: /^\/player\/(\d{8})$/, view: profileView, tab: 'search' },
     { pattern: /^\/player\/(\d{8})\/history$/, view: historyView, tab: 'search' },
+    { pattern: /^\/event\/(\d{12})$/, view: crosstableView },
   ],
   ({ root }) => {
     root.innerHTML = emptyState('♞', 'Nothing here', 'That page does not exist.') + `<p class="center"><a class="button" href="#/">Go to My Card</a></p>`

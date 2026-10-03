@@ -1,7 +1,7 @@
 // Rating history chart: a gold line of post-event ratings where each event is
 // a marker colored AND shaped by direction (▲ gained, ▼ lost, ● no change), so
 // red/green is never the only cue. Hover or arrow keys show a crosshair and
-// tooltip; click/Enter selects an event. Port of RatingHistoryView's chart.
+// tooltip; click or arrow keys select an event. Port of RatingHistoryView's chart.
 
 import { esc, eventDate, signed } from './ui'
 

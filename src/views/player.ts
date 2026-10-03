@@ -102,7 +102,7 @@ function playerPage(player: Player, mode: 'mycard' | 'profile'): string {
 
     ${
       player.events.length
-        ? `${sectionLabel('Recent events')}<div class="stack">${player.events.slice(0, 6).map((e) => eventRow(e)).join('')}</div>`
+        ? `${sectionLabel('Recent events')}<div class="stack">${player.events.slice(0, 6).map((e) => eventRow(e, { highlight: player.id })).join('')}</div>`
         : emptyState('♟', 'No rated events yet', 'Events appear here after US Chess rates them.')
     }`
 }

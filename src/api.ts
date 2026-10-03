@@ -1,7 +1,7 @@
 import { Params, Ratings, fill } from './endpoints'
 import {
-  type APIMaxRank, type APIMember, type APIMemberSection, type APIPage, type Player, type PlayerSummary,
-  mapPlayer, mapSummary,
+  type APIMaxRank, type APIMember, type APIMemberSection, type APIPage, type APIRatedEvent, type APIStanding,
+  type ChessEvent, type Player, type PlayerSummary, mapEvent, mapPlayer, mapSummary,
 } from './models'
 
 export class ApiError extends Error {
@@ -120,4 +120,31 @@ export async function searchPlayers(query: string): Promise<PlayerSummary[]> {
   // ignored and return the default top-rated list instead.
   const page = await get<APIPage<APIMember>>(Ratings.memberSearch, { [Params.fuzzy]: trimmed, [Params.size]: '40' })
   return page.items.map(mapSummary)
+}
+
+/** One section's standings, every page (safety cap: 500 players). */
+function standings(eventID: string, section: number): Promise<APIStanding[]> {
+  return collectPages(100, 5, (offset, size) =>
+    get<APIPage<APIStanding>>(fill(Ratings.sectionStandings, { eventID, section: String(section) }), {
+      [Params.size]: String(size),
+      [Params.offset]: String(offset),
+    }),
+  )
+}
+
+const events = new Map<string, Promise<ChessEvent>>()
+
+/** A rated event with every section's standings. Cached for the session; `force` refetches. */
+export function fetchEvent(id: string, { force = false } = {}): Promise<ChessEvent> {
+  let request = events.get(id)
+  if (!request || force) {
+    request = get<APIRatedEvent>(fill(Ratings.ratedEvent, { eventID: id })).then(async (event) => {
+      const numbers = (event.sections ?? []).map((s) => s.number)
+      const all = await Promise.all(numbers.map((n) => standings(id, n)))
+      return mapEvent(event, new Map(numbers.map((n, i) => [n, all[i]])))
+    })
+    request.catch(() => events.delete(id))
+    events.set(id, request)
+  }
+  return request
 }

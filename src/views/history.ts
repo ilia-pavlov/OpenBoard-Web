@@ -61,7 +61,7 @@ function entriesFor(player: Player, f: Filters): Entry[] {
     const d = post - pre
     const matches =
       f.result === 'all' || (f.result === 'up' && d > 0) || (f.result === 'down' && d < 0) || (f.result === 'even' && d === 0)
-    return { id: event.id, name: event.name, date: event.date, pre, post, matches, event }
+    return { id: event.key, name: event.name, date: event.date, pre, post, matches, event }
   })
 }
 
@@ -120,7 +120,7 @@ export const historyView: View = (ctx, [id]) => {
              ${sectionLabel(`Events · ${visible.length}`)}
              ${
                visible.length
-                 ? `<div class="stack">${[...visible].reverse().map((e) => eventRow(e.event, filters.system)).join('')}</div>`
+                 ? `<div class="stack">${[...visible].reverse().map((e) => eventRow(e.event, { system: filters.system, highlight: id })).join('')}</div>`
                  : `<p class="muted">No events match “${directions[filters.result]}” in this range.</p>`
              }`
           : emptyState('📈', `No ${filters.system} events`, 'Try a longer period or another rating type.')
@@ -132,7 +132,7 @@ export const historyView: View = (ctx, [id]) => {
       const showSelected = (picked: string | null) => {
         selectedID = picked
         const entry = entries.find((e) => e.id === picked)
-        slot.innerHTML = entry ? `${sectionLabel('Selected event')}${eventRow(entry.event, filters.system, 'selected')}` : ''
+        slot.innerHTML = entry ? `${sectionLabel('Selected event')}${eventRow(entry.event, { system: filters.system, highlight: id, selected: true })}` : ''
       }
       disposeChart = renderHistoryChart(host, entries, { selectedID, onSelect: showSelected })
       showSelected(selectedID)

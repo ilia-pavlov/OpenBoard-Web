@@ -47,6 +47,34 @@ interface APIRatingRecord {
   postProvisionalGameCount?: number
 }
 
+export interface APIRatedEvent {
+  id: string
+  name?: string
+  startDate?: string
+  endDate?: string
+  sections?: { number: number; name?: string }[]
+}
+
+export interface APIStanding {
+  ordinal?: number
+  memberId?: string
+  firstName?: string
+  lastName?: string
+  stateRep?: string
+  score?: number
+  ratings?: APIRatingRecord[]
+  roundOutcomes?: APIRoundOutcome[]
+}
+
+interface APIRoundOutcome {
+  roundNumber?: number
+  outcome?: string // "Win" / "Loss" / "Draw" / "Bye" / "WinForfeit" / …
+  color?: string
+  opponentOrdinal?: number
+  opponentFirstName?: string
+  opponentLastName?: string
+}
+
 export interface APIMaxRank {
   ratingSource?: string
   maxRank?: number
@@ -72,7 +100,11 @@ export interface PrePost {
 }
 
 export interface EventResult {
-  id: string
+  /** Unique per row: a player can play several sections of one event. */
+  key: string
+  /** The US Chess event ID, when known. */
+  id?: string
+  section?: number
   name: string
   date: Date | null
   regular?: PrePost
@@ -94,6 +126,38 @@ export interface Player {
   events: EventResult[]
   /** Regular-rating series, oldest → newest, for the sparkline. */
   ratingHistory: number[]
+}
+
+export interface RoundOutcome {
+  round: number
+  symbol: 'W' | 'L' | 'D' | 'B' | '–'
+  color?: string
+  opponentRank?: number
+  opponentName?: string
+}
+
+export interface Standing {
+  id: string
+  rank: number
+  name: string
+  state?: string
+  points: string
+  regular?: PrePost
+  quick?: PrePost
+  rounds: RoundOutcome[]
+}
+
+export interface EventSection {
+  number: number
+  name: string
+  players: Standing[]
+}
+
+export interface ChessEvent {
+  id: string
+  name: string
+  date: Date | null
+  sections: EventSection[]
 }
 
 export interface PlayerSummary {
@@ -157,17 +221,14 @@ function ratings(api?: APIMemberRating[]): Player['ratings'] {
 function eventResults(sections: APIMemberSection[]): EventResult[] {
   return sections
     .map((section, i) => {
-      const records = section.ratingRecords ?? []
-      const prePost = (system: string): PrePost | undefined => {
-        const r = records.find((x) => (x.ratingSource ?? x.ratingSystem) === system)
-        return r && { pre: r.preRating, post: r.postRating, games: r.postProvisionalGameCount }
-      }
       return {
-        id: section.event?.id ?? `section-${i}`,
+        key: `${section.event?.id ?? 'event'}-${section.sectionNumber ?? i}`,
+        id: section.event?.id,
+        section: section.sectionNumber,
         name: section.event?.name ? capitalizedIfShouty(section.event.name) : section.sectionName ?? 'Rated Event',
         date: parseDate(section.event?.startDate ?? section.startDate),
-        regular: prePost('R'),
-        quick: prePost('Q'),
+        regular: prePostFrom(section.ratingRecords, 'R'),
+        quick: prePostFrom(section.ratingRecords, 'Q'),
       }
     })
     .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0))
@@ -207,6 +268,53 @@ export function mapPlayer(member: APIMember, sections: APIMemberSection[], maxRa
         : undefined,
     events,
     ratingHistory: history(events),
+  }
+}
+
+function prePostFrom(records: APIRatingRecord[] | undefined, system: string): PrePost | undefined {
+  const r = records?.find((x) => (x.ratingSource ?? x.ratingSystem) === system)
+  return r && { pre: r.preRating, post: r.postRating, games: r.postProvisionalGameCount }
+}
+
+const roundSymbols: Record<string, RoundOutcome['symbol']> = {
+  Win: 'W', Loss: 'L', Draw: 'D', Bye: 'B', FullPointBye: 'B', HalfPointBye: 'B',
+}
+
+export function mapStanding(api: APIStanding, index: number): Standing {
+  const score = api.score ?? 0
+  return {
+    id: api.memberId ?? `player-${index}`,
+    rank: api.ordinal ?? 0,
+    name: fullName(api.firstName, api.lastName),
+    state: api.stateRep,
+    points: Number.isInteger(score) ? score.toFixed(1) : String(score),
+    regular: prePostFrom(api.ratings, 'R'),
+    quick: prePostFrom(api.ratings, 'Q'),
+    rounds: (api.roundOutcomes ?? [])
+      .filter((r) => r.roundNumber != null)
+      .map((r) => ({
+        round: r.roundNumber!,
+        symbol: roundSymbols[r.outcome ?? ''] ?? '–',
+        color: r.color,
+        opponentRank: r.opponentOrdinal || undefined,
+        opponentName: fullName(r.opponentFirstName, r.opponentLastName) || undefined,
+      }))
+      .sort((a, b) => a.round - b.round),
+  }
+}
+
+export function mapEvent(api: APIRatedEvent, standings: Map<number, APIStanding[]>): ChessEvent {
+  return {
+    id: api.id,
+    name: api.name ? capitalizedIfShouty(api.name) : `Event ${api.id}`,
+    date: parseDate(api.endDate ?? api.startDate),
+    sections: [...(api.sections ?? [])]
+      .sort((a, b) => a.number - b.number)
+      .map((ref) => ({
+        number: ref.number,
+        name: ref.name || `Section ${ref.number}`,
+        players: (standings.get(ref.number) ?? []).map(mapStanding),
+      })),
   }
 }
 

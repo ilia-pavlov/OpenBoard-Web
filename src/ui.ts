@@ -72,14 +72,24 @@ function prePostText(p?: PrePost): string {
   return `<span class="event-change"><span class="mono">${p.pre} → ${p.post}</span>${deltaBadge(d)}</span>`
 }
 
-export function eventRow(event: EventResult, system: RatingSystem = 'regular', extraClass = ''): string {
-  return `<div class="card event-row ${extraClass}">
+/** An event result row; links to the crosstable when the event ID is known. */
+export function eventRow(
+  event: EventResult,
+  { system = 'regular', highlight, selected = false }: { system?: RatingSystem; highlight?: string; selected?: boolean } = {},
+): string {
+  const body = `
     <div class="event-main">
       <div class="event-name">${esc(event.name)}</div>
       <div class="event-date">${eventDate(event.date)}</div>
     </div>
-    ${prePostText(resultFor(event, system))}
-  </div>`
+    ${prePostText(resultFor(event, system))}`
+  const className = `card event-row${selected ? ' selected' : ''}`
+  if (!event.id) return `<div class="${className}">${body}</div>`
+  const params = new URLSearchParams()
+  if (highlight) params.set('highlight', highlight)
+  if (event.section != null) params.set('section', String(event.section))
+  const qs = params.toString()
+  return `<a class="${className}" href="#/event/${esc(event.id)}${qs ? `?${qs}` : ''}">${body}${chevron}</a>`
 }
 
 export function skeleton(heights: number[]): string {

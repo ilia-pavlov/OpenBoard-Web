@@ -13,7 +13,7 @@ export const searchView: View = ({ root, params, signal }) => {
     <h1 class="screen-title">Search</h1>
     <div class="search-field">
       <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M13 13l5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      <input type="search" name="q" placeholder="Name or 8-digit member ID" aria-label="Search players"
+      <input type="search" name="q" placeholder="Name, member ID, or event ID" aria-label="Search players or events"
         autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
     </div>
     <div class="search-results" aria-live="polite"></div>`
@@ -37,7 +37,7 @@ export const searchView: View = ({ root, params, signal }) => {
              <div class="card list">${recents
                .map((q) => `<button class="list-row recent" type="button" data-query="${esc(q)}"><span aria-hidden="true">↺</span>${esc(q)}</button>`)
                .join('')}</div>`
-          : emptyState('⌕', 'Find anyone rated by US Chess', 'Type a name ("pavlov") or an 8-digit member ID.')
+          : emptyState('⌕', 'Find anyone rated by US Chess', 'Type a name ("pavlov"), an 8-digit member ID, or a 12-digit event ID.')
       }`
   }
 
@@ -47,6 +47,16 @@ export const searchView: View = ({ root, params, signal }) => {
     replaceQuery(new URLSearchParams(trimmed ? { q: trimmed } : {}))
     const current = ++generation
     if (!trimmed) return showHome()
+    if (/^\d{12}$/.test(trimmed)) {
+      // A 12-digit US Chess event ID (year, month, day, then a sequence number).
+      prefs.remember(trimmed)
+      results.innerHTML = `<div class="card list"><a class="list-row" href="#/event/${trimmed}">
+        <span class="browse-icon" aria-hidden="true">♜</span>
+        <span class="player-text"><strong>Open crosstable</strong><small class="mono">Event ${trimmed}</small></span>
+        ${chevron}
+      </a></div>`
+      return
+    }
 
     results.innerHTML = skeleton([64, 64, 64, 64])
     timer = window.setTimeout(async () => {
