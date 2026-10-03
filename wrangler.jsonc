@@ -16,6 +16,9 @@
   "vars": {
     "CANONICAL_HOST": "openboard.online"
   },
+  // Keep the old workers.dev address alive so its links forward to openboard.online
+  // (Wrangler turns it off by default once custom domains are listed).
+  "workers_dev": true,
   "routes": [
     { "pattern": "openboard.online", "custom_domain": true },
     { "pattern": "www.openboard.online", "custom_domain": true }
