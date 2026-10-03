@@ -40,7 +40,12 @@ export function startRouter(root: HTMLElement, routes: Route[], notFound: View) 
     ;(route?.view ?? notFound)({ root, params: new URLSearchParams(query), signal: controller.signal }, captures)
 
     // New screen: start at the top. Same screen with new filters: stay put.
-    if (normalized !== lastPath) window.scrollTo(0, 0)
+    if (normalized !== lastPath) {
+      window.scrollTo(0, 0)
+      // Move focus to the new screen: screen readers start there, and the
+      // clicked tab doesn't keep a focus ring.
+      if (lastPath) root.focus({ preventScroll: true })
+    }
     lastPath = normalized
   }
 

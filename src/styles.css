@@ -324,7 +324,7 @@ main {
 .stat-title.gold { color: var(--gold); }
 .stat-title.teal { color: var(--teal); }
 .stat-value { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.stat-caption { font-size: 12px; color: var(--text-2); }
+.stat-caption { font-size: 12px; color: var(--text-2); font-variant-numeric: tabular-nums; }
 
 .event-row { display: flex; align-items: center; gap: 12px; padding: 14px; }
 .event-row.selected { border-color: color-mix(in srgb, var(--gold) 90%, transparent); box-shadow: 0 0 0 1px var(--gold); }
@@ -746,6 +746,8 @@ a.event-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(--hair
 .location-inputs input:focus { border-color: var(--gold); }
 .location-actions { display: flex; justify-content: space-between; gap: 12px; }
 
+.scope-body, .selected-slot { display: flex; flex-direction: column; gap: 16px; }
+.selected-slot:empty { display: none; }
 .results { display: flex; flex-direction: column; gap: 10px; }
 .tournament-row { display: flex; align-items: flex-start; gap: 14px; padding: 14px; }
 .tournament-row .chev { margin-top: 6px; }

@@ -181,7 +181,7 @@ function statCard(title: string, slot: RankSlot, icon: string, tint: string): st
   return `<div class="card stat-card">
     <div class="stat-title ${tint}"><span aria-hidden="true">${icon}</span>${esc(title)}</div>
     <div class="stat-value">№ ${num(slot.rank)}</div>
-    <div class="stat-caption mono">${caption}</div>
+    <div class="stat-caption">${caption}</div>
   </div>`
 }
 
