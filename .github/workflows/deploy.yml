@@ -37,7 +37,7 @@ jobs:
       cancel-in-progress: false
     environment:
       name: production
-      url: https://openboard-web.openboard-web.workers.dev
+      url: https://openboard.online
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7

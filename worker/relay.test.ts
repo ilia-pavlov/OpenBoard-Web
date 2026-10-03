@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { upstreamFor } from './relay'
+import { canonicalRedirect, upstreamFor } from './relay'
 
 const at = (path: string) => upstreamFor(new URL(`https://openboard.example${path}`))
 
@@ -30,5 +30,18 @@ describe('upstreamFor', () => {
     expect(at('/api/site/../etc/passwd')).toBeUndefined()
     expect(at('/api/site/news/some-article')).toBeUndefined() // nested site paths
     expect(at('/api/other/thing')).toBeUndefined()
+  })
+})
+
+describe('canonicalRedirect', () => {
+  const host = 'openboard.online'
+  it('sends www and the old workers.dev address to the canonical host, keeping the path', () => {
+    expect(canonicalRedirect(new URL('https://www.openboard.online/'), host)).toBe('https://openboard.online/')
+    expect(canonicalRedirect(new URL('https://openboard-web.openboard-web.workers.dev/index.html?x=1'), host)).toBe('https://openboard.online/index.html?x=1')
+  })
+
+  it('serves the canonical host and local development directly', () => {
+    expect(canonicalRedirect(new URL('https://openboard.online/'), host)).toBeUndefined()
+    expect(canonicalRedirect(new URL('http://127.0.0.1:8787/'), host)).toBeUndefined()
   })
 })

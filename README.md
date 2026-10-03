@@ -3,7 +3,7 @@
 <p align="center">
   <strong>US Chess ratings and tournaments, made for families. In any browser.</strong><br>
   <em>The web version of <a href="https://github.com/ilia-pavlov/OpenBoard">OpenBoard for iPhone &amp; iPad</a>, on live US Chess data.</em><br>
-  <a href="https://openboard-web.openboard-web.workers.dev"><strong>▶ Open OpenBoard Web</strong></a>
+  <a href="https://openboard.online"><strong>▶ Open OpenBoard Web</strong></a>
 </p>
 
 <p align="center">
@@ -101,8 +101,11 @@ same-origin paths, and something on the server side forwards them:
 | `/api/site/*` | `https://new.uschess.org/*` |
 
 - **Development:** Vite's dev proxy (`vite.config.ts`).
-- **Production:** a Cloudflare Worker (`worker/`, `wrangler.jsonc`). Static assets serve
-  the site; the Worker runs only for `/api/*`. It:
+- **Production:** a Cloudflare Worker (`worker/`, `wrangler.jsonc`) on
+  **openboard.online**. Static assets serve the site; the Worker runs only for the page
+  itself and `/api/*`. It:
+  - sends `www.openboard.online` and the old workers.dev address to openboard.online
+    (browsers keep storage per address, so one address means one Watching list);
   - forwards **only the paths the site uses** (anything else gets a 404, and only GET is
     allowed), so it isn't an open proxy;
   - keeps successful answers in Cloudflare's edge cache: minutes for profiles and

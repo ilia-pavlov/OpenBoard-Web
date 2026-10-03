@@ -9,6 +9,17 @@
 
 export const userAgent = 'OpenBoard-Web (+https://github.com/ilia-pavlov/OpenBoard-Web)'
 
+/**
+ * Where to send a request that arrived on a non-canonical host (www, the old
+ * workers.dev address), or undefined to serve it here. Browsers keep each
+ * host's storage separately, so one address means one Watching list. Local
+ * development hosts are never redirected.
+ */
+export function canonicalRedirect(url: URL, canonicalHost: string): string | undefined {
+  if (url.hostname === canonicalHost || url.hostname === 'localhost' || url.hostname === '127.0.0.1') return undefined
+  return `https://${canonicalHost}${url.pathname}${url.search}`
+}
+
 export interface Upstream {
   url: string
   /** Seconds to keep a successful answer in the edge cache (0: don't). */

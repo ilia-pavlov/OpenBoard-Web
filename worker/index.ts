@@ -1,8 +1,9 @@
 // OpenBoard Web on Cloudflare Workers: static assets serve the site, and this
-// Worker runs only for /api/* (see run_worker_first in wrangler.jsonc), relaying
-// to US Chess with an edge cache in front.
+// Worker runs only for the page itself and /api/* (see run_worker_first in
+// wrangler.jsonc). It sends other hostnames to the canonical one and relays
+// /api/* to US Chess with an edge cache in front.
 
-import { upstreamFor, userAgent } from './relay'
+import { canonicalRedirect, upstreamFor, userAgent } from './relay'
 
 /** How long browsers may reuse a relayed answer without asking again. */
 const browserTTL = 60
@@ -12,11 +13,20 @@ function error(status: number, message: string): Response {
 }
 
 export default {
-  async fetch(request, _env, ctx): Promise<Response> {
+  async fetch(request, env, ctx): Promise<Response> {
+    const url = new URL(request.url)
+    const isAPI = url.pathname.startsWith('/api/')
+
+    if (!isAPI) {
+      // The page: forward www and the old workers.dev address (the #/… part of
+      // a link survives a redirect), otherwise serve it from static assets.
+      const target = canonicalRedirect(url, env.CANONICAL_HOST)
+      return target ? Response.redirect(target, 301) : env.ASSETS.fetch(request)
+    }
+
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return error(405, 'Only GET requests are relayed.')
     }
-    const url = new URL(request.url)
     const upstream = upstreamFor(url)
     if (!upstream) return error(404, 'Not a US Chess path this site relays.')
 
