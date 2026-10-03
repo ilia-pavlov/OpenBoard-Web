@@ -7,6 +7,10 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/ilia-pavlov/OpenBoard-Web/actions/workflows/deploy.yml"><img alt="Test & deploy" src="https://github.com/ilia-pavlov/OpenBoard-Web/actions/workflows/deploy.yml/badge.svg"></a>
+</p>
+
+<p align="center">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white">
   <img alt="Vite" src="https://img.shields.io/badge/Vite-8-646CFF?style=for-the-badge&logo=vite&logoColor=white">
   <img alt="Framework" src="https://img.shields.io/badge/framework-none-0B0E13?style=for-the-badge">
@@ -77,7 +81,12 @@ npm run dev        # http://localhost:5173
 - `npm test` runs the unit tests (Vitest).
 - `npm run build` typechecks the site and the Worker, and builds the site into `dist/`.
 - `npm run preview:worker` runs the production setup locally (site + relay) with Wrangler.
-- `npm run deploy` builds and deploys to Cloudflare Workers.
+- `npm run deploy` builds and deploys to Cloudflare Workers by hand.
+
+Every push and pull request runs the tests and build in GitHub Actions
+(`.github/workflows/deploy.yml`). A push to `main` that passes is deployed to
+Cloudflare automatically, using the `CLOUDFLARE_API_TOKEN` and
+`CLOUDFLARE_ACCOUNT_ID` repository secrets.
 
 ## 🔌 Why there's a relay
 
