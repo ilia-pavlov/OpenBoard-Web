@@ -2,7 +2,8 @@
 
 <p align="center">
   <strong>US Chess ratings and tournaments, made for families. In any browser.</strong><br>
-  <em>The web version of <a href="https://github.com/ilia-pavlov/OpenBoard">OpenBoard for iPhone &amp; iPad</a>, on live US Chess data.</em>
+  <em>The web version of <a href="https://github.com/ilia-pavlov/OpenBoard">OpenBoard for iPhone &amp; iPad</a>, on live US Chess data.</em><br>
+  <a href="https://openboard-web.openboard-web.workers.dev"><strong>▶ Open OpenBoard Web</strong></a>
 </p>
 
 <p align="center">
@@ -74,7 +75,9 @@ npm run dev        # http://localhost:5173
 ```
 
 - `npm test` runs the unit tests (Vitest).
-- `npm run build` typechecks and builds a static site into `dist/`.
+- `npm run build` typechecks the site and the Worker, and builds the site into `dist/`.
+- `npm run preview:worker` runs the production setup locally (site + relay) with Wrangler.
+- `npm run deploy` builds and deploys to Cloudflare Workers.
 
 ## 🔌 Why there's a relay
 
@@ -89,8 +92,18 @@ same-origin paths, and something on the server side forwards them:
 | `/api/site/*` | `https://new.uschess.org/*` |
 
 - **Development:** Vite's dev proxy (`vite.config.ts`).
-- **Production (not set up yet):** a small relay at the same paths, for example a
-  Cloudflare Worker.
+- **Production:** a Cloudflare Worker (`worker/`, `wrangler.jsonc`). Static assets serve
+  the site; the Worker runs only for `/api/*`. It:
+  - forwards **only the paths the site uses** (anything else gets a 404, and only GET is
+    allowed), so it isn't an open proxy;
+  - keeps successful answers in Cloudflare's edge cache: minutes for profiles and
+    searches, hours for finished events, Top 100 lists and the calendar. US Chess allows
+    about 100 requests a minute per IP, and every visitor's request leaves through the
+    relay, so the cache is what keeps a busy hour from rate-limiting everyone;
+  - identifies itself to US Chess with a User-Agent that links to this repo.
+
+  The site's responses carry a Content-Security-Policy and other security headers
+  (`public/_headers`).
 
 ## 🗂️ Layout
 
@@ -109,6 +122,7 @@ same-origin paths, and something on the server side forwards them:
 | `src/watchlist.ts` | Checks watched players for rating changes and sends alerts. Port of `RefreshScheduler.swift`. |
 | `src/location.ts` | "Use my location" and distances. |
 | `src/store.ts` | IndexedDB cache for data worth keeping across visits. |
+| `worker/` | The Cloudflare Worker: the relay's path rules and cache lifetimes (`relay.ts`) and the handler (`index.ts`). |
 | `src/views/` | One file per screen: My Card and profiles, Search, Rating History, Crosstable, Best wins, Top 100, Events, Tournament, Watching, About. |
 
 ## 🌍 Other services
