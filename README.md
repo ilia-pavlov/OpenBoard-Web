@@ -37,6 +37,9 @@ for US Chess ratings, running on live data from US Chess.
   notifications when a watched player's rating changes. A website can't check in the
   background like the app, so it checks when you open it (at most every 12 hours) and
   when you tap ↻.
+- **About**: tap ♛ OpenBoard in the header for why the project exists (helping parents
+  find tournaments, letting kids follow friends and rivals and track their points, and
+  growing chess in the US) and a tour of what it can do.
 - **Search**: by name, 8-digit member ID, or 12-digit event ID, with recent searches
   remembered in this browser.
 
