@@ -75,6 +75,9 @@ function notify(change: RatingChange) {
   new Notification('Rating update', { body: `${first}'s new rating: ${change.new}${deltaText}${cheer}`, icon: '/favicon.svg', tag: `rating-${change.memberID}` })
 }
 
+/** Fired on window after every check, so an open Watching screen can redraw. */
+export const watchlistChecked = 'openboard:watchlist-checked'
+
 let running: Promise<RatingChange[]> | undefined
 
 /**
@@ -105,6 +108,7 @@ export function checkWatchlist(): Promise<RatingChange[]> {
       })
     }
     writeNumber('watchlist.lastChecked', Date.now())
+    window.dispatchEvent(new CustomEvent<RatingChange[]>(watchlistChecked, { detail: changes }))
     return changes
   })().finally(() => (running = undefined))
   return running

@@ -7,7 +7,7 @@ import {
   type SavedTournament, type WatchedPlayer, avatar, chevron, clockDigits, daysAgo, dateRange, emptyState, esc, eventDate,
   prefs, sectionLabel,
 } from '../ui'
-import { type RatingChange, alertsEnabled, checkWatchlist, enableAlerts, lastChecked } from '../watchlist'
+import { type RatingChange, alertsEnabled, checkWatchlist, enableAlerts, lastChecked, watchlistChecked } from '../watchlist'
 
 export const watchingView: View = ({ root, signal }) => {
   let editing = false
@@ -162,6 +162,17 @@ export const watchingView: View = ({ root, signal }) => {
     if (input.checked && !on) message = 'Notifications are blocked for this site. Allow them in your browser settings to get alerts.'
     render()
   }
+
+  // The check that runs on opening the site may finish while this screen is open.
+  window.addEventListener(
+    watchlistChecked,
+    (e) => {
+      if (checking) return // the ↻ handler redraws with its own message
+      changes = (e as CustomEvent<RatingChange[]>).detail
+      render()
+    },
+    { signal },
+  )
 
   render()
 }
