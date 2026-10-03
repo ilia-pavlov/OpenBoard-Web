@@ -3,10 +3,12 @@ import { startRouter } from './router'
 import { startBadges } from './toplists'
 import { emptyState } from './ui'
 import { crosstableView } from './views/crosstable'
+import { eventsView } from './views/events'
 import { historyView } from './views/history'
 import { myCardView, profileView } from './views/player'
 import { searchView } from './views/search'
 import { top100BrowseView, top100ListView } from './views/top100'
+import { majorEventView, tournamentView } from './views/tournament'
 
 // MARK: - Appearance (System / Light / Dark; dark by default, like the app)
 
@@ -55,6 +57,9 @@ startRouter(
     { pattern: /^\/player\/(\d{8})$/, view: profileView, tab: 'search' },
     { pattern: /^\/player\/(\d{8})\/history$/, view: historyView, tab: 'search' },
     { pattern: /^\/event\/(\d{12})$/, view: crosstableView },
+    { pattern: /^\/events$/, view: eventsView, tab: 'events' },
+    { pattern: /^\/tournament\/([\w%.-]+)$/, view: tournamentView, tab: 'events' },
+    { pattern: /^\/major$/, view: majorEventView, tab: 'events' },
     { pattern: /^\/top100$/, view: top100BrowseView, tab: 'search' },
     { pattern: /^\/top100\/([A-Za-z0-9]+)$/, view: top100ListView, tab: 'search' },
   ],

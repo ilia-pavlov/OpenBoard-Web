@@ -14,6 +14,12 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/ratings/, '/api/v1'),
         headers: { 'User-Agent': userAgent },
       },
+      '/api/site': {
+        target: 'https://new.uschess.org',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/site/, ''),
+        headers: { 'User-Agent': userAgent },
+      },
     },
   },
 })

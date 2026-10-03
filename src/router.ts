@@ -27,6 +27,7 @@ export function startRouter(root: HTMLElement, routes: Route[], notFound: View) 
     root.onclick = null
     root.oninput = null
     root.onchange = null
+    root.onsubmit = null
     document.title = 'OpenBoard'
 
     const normalized = path || '/'

@@ -154,4 +154,61 @@ export const prefs = {
     const others = read<string[]>('bestWins.paused', []).filter((id) => id !== memberID)
     write('bestWins.paused', paused ? [...others, memberID] : others)
   },
+  /** Where Upcoming searches from: a city or ZIP, plus coordinates when it came from the device. */
+  get location(): SavedLocation | null {
+    return read<SavedLocation | null>('location', null)
+  },
+  set location(value: SavedLocation | null) {
+    write('location', value)
+  },
+  get radius(): number {
+    return read<number>('upcoming.radius', 50)
+  },
+  set radius(miles: number) {
+    write('upcoming.radius', miles)
+  },
+  get savedTournaments(): SavedTournament[] {
+    return read<SavedTournament[]>('savedTournaments', [])
+  },
+  isSaved(id: string): boolean {
+    return this.savedTournaments.some((t) => t.id === id)
+  },
+  toggleSaved(t: SavedTournament): boolean {
+    const others = this.savedTournaments.filter((s) => s.id !== t.id)
+    const saving = others.length === this.savedTournaments.length
+    write('savedTournaments', saving ? [...others, t].sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? '')) : others)
+    return saving
+  },
+}
+
+export interface SavedLocation {
+  origin: string
+  latitude?: number
+  longitude?: number
+}
+
+export interface SavedTournament {
+  id: string
+  name: string
+  /** "2026-10-09" */
+  startDate?: string
+  endDate?: string
+  location?: string
+}
+
+/** "2026-10-09" for a local date. */
+export const isoDay = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+/** "Fri, Oct 9 – Sun, Oct 11" (the year is added when it isn't this year). */
+export function dateRange(start: Date, end: Date): string {
+  const thisYear = start.getFullYear() === new Date().getFullYear()
+  const opts: Intl.DateTimeFormatOptions = { weekday: 'short', month: 'short', day: 'numeric' }
+  return `${start.toLocaleDateString('en-US', opts)} – ${end.toLocaleDateString('en-US', thisYear ? opts : { ...opts, year: 'numeric' })}`
+}
+
+/** "6462385213" → "(646) 238-5213"; anything else unchanged. */
+export function phone(digits: string): string {
+  const d = digits.length === 11 && digits.startsWith('1') ? digits.slice(1) : digits
+  return d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : digits
 }

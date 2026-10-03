@@ -24,10 +24,15 @@ for US Chess ratings, running on live data from US Chess.
   Players on a list get a badge like **🏅 #37 · Age 9** on My Card, profiles, search
   results, crosstables and Best wins. A profile's badges open that list with the player
   highlighted.
+- **Upcoming tournaments** (Events tab): US Chess tournaments near a city or ZIP (10 to
+  500 miles; this weekend, 30 days or 3 months; scholastic, quads or Grand Prix) and the
+  nationwide major events from the Plan Ahead Calendar. Each tournament shows its dates,
+  a venue map with **Directions**, a **Register** button, **Save** for later, organizer
+  contacts, and the full announcement as the organizer formatted it, with a **Copy**
+  button that keeps each link's address.
 - **Search**: by name, 8-digit member ID, or 12-digit event ID, with recent searches
   remembered in this browser.
 
-Coming next: Upcoming tournaments.
 
 ## Run it
 
@@ -41,9 +46,15 @@ npm run dev        # http://localhost:5173
 ## Why there's a relay
 
 US Chess only lets browsers call `ratings-api.uschess.org` from its own site. The
-server sends `Access-Control-Allow-Origin` only for `https://ratings.uschess.org`. So
-the page calls same-origin `/api/ratings/*` paths, and something on the server side
-forwards them:
+server sends `Access-Control-Allow-Origin` only for `https://ratings.uschess.org`, and
+`new.uschess.org` (tournament listings) sends no CORS headers at all. So the page calls
+same-origin paths, and something on the server side forwards them:
+
+| Page calls | Forwarded to |
+|---|---|
+| `/api/ratings/*` | `https://ratings-api.uschess.org/api/v1/*` |
+| `/api/site/*` | `https://new.uschess.org/*` |
+
 
 - **Development:** Vite's dev proxy (`vite.config.ts`).
 - **Production (not set up yet):** a small relay at the same paths, for example a
@@ -60,9 +71,19 @@ forwards them:
 | `src/chart.ts` | The Rating History chart (SVG, hover, tap, and arrow keys). |
 | `src/bestwins.ts` | Best wins ranking and the paced, resumable scan. Port of `BestWins` and `bestWinsScan`. |
 | `src/toplists.ts` | Which Top 100 lists each player is on, and the badges. Port of `TopListsIndex.swift`. |
+| `src/tournaments.ts` | Upcoming tournaments: listings, announcements and the Plan Ahead Calendar, parsed from new.uschess.org. Port of `TournamentsService.swift`. |
+| `src/announcement.ts` | Makes an organizer's announcement HTML safe to show (allowlist) and builds the Copy text. |
+| `src/location.ts` | "Use my location" and distances. |
 | `src/store.ts` | IndexedDB cache for data worth keeping across visits. |
 | `src/estimator.ts` | Per-round rating estimates. Port of `RoundRatingEstimator.swift`. |
-| `src/views/` | My Card and player profile, Search, Rating History, Crosstable, Best wins, Top 100. |
+| `src/views/` | My Card and player profile, Search, Rating History, Crosstable, Best wins, Top 100, Events, Tournament. |
+
+## Other services
+
+- **OpenStreetMap** draws the venue map on a tournament page (an embedded map; it needs
+  WebGL), and its Nominatim service turns your location into a city, only when you tap
+  "Use my location". The US Chess search accepts a city or ZIP but ignores coordinates.
+- **Directions** open Apple Maps on Apple devices and Google Maps elsewhere.
 
 US Chess's ratings API isn't officially documented or supported, so its responses
 can change without notice.
