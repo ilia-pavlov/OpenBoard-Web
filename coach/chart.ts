@@ -2,10 +2,11 @@
 // for every tournament. The first eight players get the validated categorical
 // palette in fixed order (so a player keeps their color); anyone after that is
 // a quiet gray line until pointed at or picked in the legend. Hovering shows
-// the nearest tournament; the legend shows and hides players.
+// the nearest tournament; the legend shows and hides players; the result
+// filter keeps dots only on tournaments that went that way (lines stay).
 
 import { esc, eventDate, signed } from '../src/ui'
-import type { ChartSeries } from './metrics'
+import { type ChartSeries, type ResultFilter, matchesResult } from './metrics'
 
 const height = 360
 const pad = { top: 18, right: 18, bottom: 30, left: 52 }
@@ -42,7 +43,15 @@ function timeTicks(from: number, to: number, width: number): { at: number; label
 }
 
 /** Draws the chart into `host` and keeps the legend in `legend`. Returns a cleanup function. */
-export function renderGroupChart(host: HTMLElement, legend: HTMLElement, series: ChartSeries[], onPlayer: (id: string, anchor: HTMLElement) => void): () => void {
+export function renderGroupChart(
+  host: HTMLElement,
+  legend: HTMLElement,
+  series: ChartSeries[],
+  onPlayer: (id: string, anchor: HTMLElement) => void,
+  result: ResultFilter = 'all',
+): () => void {
+  /** Whether a point gets a dot (and can be hovered) under the result filter. */
+  const shown = (p: ChartSeries['points'][number]) => result === 'all' || (p.pre != null && matchesResult(result, p.rating - p.pre))
   const withData = series.filter((s) => s.points.length)
   const colorIndex = new Map(series.map((s, i) => [s.id, i]))
 
@@ -91,7 +100,9 @@ export function renderGroupChart(host: HTMLElement, legend: HTMLElement, series:
         const dim = emphasized && emphasized !== s.id
         const pts = s.points.map((p) => `${x(p.date.getTime()).toFixed(1)},${y(p.rating).toFixed(1)}`).join(' ')
         const dots = s.points
-          .map((p, j) => `<circle cx="${x(p.date.getTime()).toFixed(1)}" cy="${y(p.rating).toFixed(1)}" r="${hover?.id === s.id && hover.index === j ? 6 : 4}" />`)
+          .map((p, j) =>
+            shown(p) ? `<circle cx="${x(p.date.getTime()).toFixed(1)}" cy="${y(p.rating).toFixed(1)}" r="${hover?.id === s.id && hover.index === j ? 6 : 4}" />` : '',
+          )
           .join('')
         return `<g class="series${dim ? ' dim' : ''}${emphasized === s.id ? ' emph' : ''}" style="--c:${colorVar(i)}">
           <polyline points="${pts}" />${dots}</g>`
@@ -120,7 +131,7 @@ export function renderGroupChart(host: HTMLElement, legend: HTMLElement, series:
       </div>`
     }
 
-    host.innerHTML = `<svg width="${width}" height="${height}" role="img" aria-label="Rating after each tournament for ${visible.length} players">${grid}${axis}${lines}</svg>${tip}`
+    host.innerHTML = `<svg class="${result === 'all' ? '' : 'filtered'}" width="${width}" height="${height}" role="img" aria-label="Rating after each tournament for ${visible.length} players">${grid}${axis}${lines}</svg>${tip}`
     hostScale = { x, y, visible }
   }
 
@@ -135,6 +146,7 @@ export function renderGroupChart(host: HTMLElement, legend: HTMLElement, series:
     let best: { id: string; index: number; d: number } | undefined
     for (const s of hostScale.visible) {
       s.points.forEach((p, index) => {
+        if (!shown(p)) return
         const d = Math.hypot(hostScale!.x(p.date.getTime()) - mx, hostScale!.y(p.rating) - my)
         if (d < 28 && (!best || d < best.d)) best = { id: s.id, index, d }
       })

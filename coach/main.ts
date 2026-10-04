@@ -13,8 +13,8 @@ import { clockDigits, deltaBadge, emptyState, esc, eventDate, num, signed, state
 import { renderGroupChart, resetChart } from './chart'
 import { type Group, exportFile, groups, parseExportFile, parseShareRoster, shareRosterURL } from './groups'
 import {
-  type PeriodDays, type PlayerRow, type RatingType, type SortKey, chartSeries, groupSummary, lastRatedText, periods, playerRow,
-  ratingTypes, resultOf, resultsByEvent, resultsByPlayer, sortRows,
+  type PeriodDays, type PlayerRow, type RatingType, type ResultFilter, type ResultRow, type SortKey, chartSeries, groupSummary,
+  lastRatedText, periods, playerRow, ratingTypes, resultFilters, resultOf, resultRows, sortRows,
 } from './metrics'
 
 const main = document.getElementById('coach')!
@@ -104,24 +104,46 @@ const loadedPlayer = (id: string) => {
 
 // MARK: - State
 
-function readSetting<T extends string>(key: string, allowed: readonly string[], fallback: T): T {
-  try {
-    const v = localStorage.getItem(key)
-    return v && allowed.includes(v) ? (v as T) : fallback
-  } catch {
-    return fallback
-  }
-}
 function saveSetting(key: string, value: string) {
   try {
     localStorage.setItem(key, value)
   } catch {}
 }
 
+/** Each widget has its own controls, remembered in this browser. */
+interface Settings {
+  players: { type: RatingType; period: PeriodDays }
+  chart: { type: RatingType; period: PeriodDays; result: ResultFilter }
+  results: { type: RatingType; period: PeriodDays; result: ResultFilter; player: string; mode: 'event' | 'player' }
+}
+
+const defaultSettings: Settings = {
+  players: { type: 'regular', period: 90 },
+  chart: { type: 'regular', period: 365, result: 'all' },
+  results: { type: 'regular', period: 90, result: 'all', player: '', mode: 'event' },
+}
+
+function readSettings(): Settings {
+  try {
+    const saved = JSON.parse(localStorage.getItem('coach.settings') ?? '{}') as Partial<Settings>
+    return {
+      players: { ...defaultSettings.players, ...saved.players },
+      chart: { ...defaultSettings.chart, ...saved.chart },
+      results: { ...defaultSettings.results, ...saved.results, player: '' },
+    }
+  } catch {
+    return structuredClone(defaultSettings)
+  }
+}
+
+const settings = readSettings()
+const saveSettings = () => saveSetting('coach.settings', JSON.stringify(settings))
+
+/** Results show in pages, so a big group's season stays readable. */
+const resultsPage = 30
+let resultsLimit = resultsPage
+
 let groupID: string | null = null
-let ratingType: RatingType = readSetting('coach.rating', Object.keys(ratingTypes), 'regular')
-let period = Number(readSetting('coach.period', Object.keys(periods), '90')) as PeriodDays
-let resultsMode: 'event' | 'player' = readSetting('coach.results', ['event', 'player'], 'event')
 let sort: { key: SortKey; descending: boolean } = { key: 'live', descending: true }
 let addOpen = false
 let renaming = false
@@ -132,7 +154,8 @@ let message = ''
 let disposeChart: (() => void) | undefined
 
 const currentGroup = (): Group | undefined => (groupID ? groups.get(groupID) : undefined)
-const periodLabel = () => periods[period]
+/** Per-tournament results exist for Regular and Quick only, so the chart and results offer those two. */
+const perEventTypes = { regular: 'Regular', quick: 'Quick' } as const
 
 // MARK: - Sidebar
 
@@ -213,16 +236,13 @@ function renderGroup() {
     </header>
     ${message ? `<div class="card banner" role="status">${message}</div>` : ''}
     ${addOpen ? addPanel() : ''}
-    <div class="coach-controls">
-      ${controlChip('rating', 'Rating', ratingTypes[ratingType], Object.entries(ratingTypes), ratingType)}
-      ${controlChip('period', 'Period', periodLabel(), Object.entries(periods).map(([k, v]) => [k, v]), String(period))}
-      ${ratingType === 'blitz' ? '<span class="muted small">US Chess publishes Blitz ratings without per-tournament changes, so changes and the chart cover Regular and Quick.</span>' : ''}
-    </div>
     <div class="group-content"></div>`
   renderGroupContent()
   if (renaming) main.querySelector<HTMLInputElement>('.group-name')?.select()
   else if (addOpen) main.querySelector<HTMLInputElement>('input[name=search]')?.focus()
 }
+
+const periodOptions = () => Object.entries(periods) as [string, string][]
 
 function controlChip(key: string, label: string, title: string, options: [string, string][], value: string): string {
   return `<label class="chip control-chip">
@@ -271,38 +291,57 @@ function renderGroupContent() {
   load(group.memberIDs)
 
   const ready = group.memberIDs.map(loadedPlayer).filter((p): p is Player => !!p)
-  const rows = ready.map((p) => playerRow(p, ratingType, period))
+  const { players: ps, chart: cs } = settings
+  const rows = ready.map((p) => playerRow(p, ps.type, ps.period))
   const summary = groupSummary(rows)
   const pending = group.memberIDs.filter((id) => !players.has(id)).length
   const onTop100 = ready.filter((p) => ranksFor(p.id).length).length
-  const chartType = ratingType === 'blitz' ? 'regular' : ratingType
+  const typeLabel = ratingTypes[ps.type]
+  const periodLabel = periods[ps.period]
 
   host.innerHTML = `
     <div class="tiles">
-      ${tile('Average live rating', summary.averageLive != null ? String(summary.averageLive) : '–', `${ratingTypes[ratingType]}, rated players`)}
-      ${tile(`Change · ${periodLabel()}`, ratingType === 'blitz' ? '–' : summary.periodChange ? signed(summary.periodChange) : '0', `${ratingTypes[ratingType]} points, whole group`, summary.periodChange > 0 ? 'up' : summary.periodChange < 0 ? 'down' : '')}
-      ${tile(`Events · ${periodLabel()}`, num(summary.periodEvents), `${ratingTypes[ratingType]}-rated tournaments`)}
+      ${tile('Average live rating', summary.averageLive != null ? String(summary.averageLive) : '–', `${typeLabel}, rated players`)}
+      ${tile(`Change · ${periodLabel}`, ps.type === 'blitz' ? '–' : summary.periodChange ? signed(summary.periodChange) : '0', `${typeLabel} points, whole group`, summary.periodChange > 0 ? 'up' : summary.periodChange < 0 ? 'down' : '')}
+      ${tile(`Events · ${periodLabel}`, num(summary.periodEvents), `${typeLabel}-rated tournaments`)}
       ${tile('On a Top 100 list', String(onTop100), 'US Chess, this month')}
     </div>
     ${pending ? `<p class="muted small loading-line"><span class="spinner" aria-hidden="true"></span> Loading ${pending} of ${group.memberIDs.length} players…</p>` : ''}
-    <section class="card chart-card-wide">
-      <div class="chart-head">
-        <h2 class="section-label">${ratingTypes[chartType]} rating · ${periodLabel()}</h2>
-        <span class="muted small">Each dot is a tournament. Click a dot for the player, click a name to hide or show them.</span>
+
+    <section class="card widget chart-card-wide">
+      <div class="widget-head">
+        <h2 class="section-label">Rating over time</h2>
+        <div class="coach-controls">
+          ${controlChip('chart.period', 'Period', periods[cs.period], periodOptions(), String(cs.period))}
+          ${controlChip('chart.type', 'Rating', perEventTypes[cs.type as 'regular' | 'quick'] ?? 'Regular', Object.entries(perEventTypes), cs.type)}
+          ${controlChip('chart.result', 'Result', resultFilters[cs.result], Object.entries(resultFilters), cs.result)}
+        </div>
       </div>
+      <p class="muted small">Each dot is a tournament${cs.result === 'all' ? '' : ` where the player ${cs.result === 'up' ? 'gained' : cs.result === 'down' ? 'lost' : 'kept the same'} rating`}. Click a dot for the player; click a name to hide or show them.</p>
       <div class="group-legend"></div>
       <div class="group-chart"></div>
     </section>
-    <div class="coach-grid">
-      <section class="card roster-card">${rosterTable(group, rows)}</section>
-      <aside class="coach-side"><section class="card side-card">${resultsHTML(ready)}</section></aside>
-    </div>`
+
+    <section class="card widget roster-card">
+      <div class="widget-head">
+        <h2 class="section-label">Players</h2>
+        <div class="coach-controls">
+          ${controlChip('players.period', 'Period', periodLabel, periodOptions(), String(ps.period))}
+          ${controlChip('players.type', 'Rating', typeLabel, Object.entries(ratingTypes), ps.type)}
+        </div>
+      </div>
+      ${ps.type === 'blitz' ? '<p class="muted small">US Chess publishes Blitz ratings without per-tournament results, so Blitz shows ratings only.</p>' : ''}
+      <div class="table-scroll">${rosterTable(group, rows)}</div>
+    </section>
+
+    <section class="card widget results-card">${resultsHTML(ready)}</section>`
 
   disposeChart = renderGroupChart(
     host.querySelector<HTMLElement>('.group-chart')!,
     host.querySelector<HTMLElement>('.group-legend')!,
-    chartSeries(ready, chartType, period),
+    chartSeries(ready, cs.type === 'blitz' ? 'regular' : cs.type, cs.period),
     (id, anchor) => openPlayerCard(id, anchor),
+    cs.result,
   )
 }
 
@@ -313,14 +352,15 @@ function tile(title: string, value: string, caption: string, tint = ''): string 
 const playerButton = (id: string, name: string) => `<button class="player-link" type="button" data-player="${esc(id)}">${esc(name)}</button>`
 
 function rosterTable(group: Group, rows: PlayerRow[]): string {
+  const periodLabel = periods[settings.players.period]
   const columns: { key: SortKey; label: string; numeric?: boolean; title?: string }[] = [
     { key: 'name', label: 'Player' },
     { key: 'published', label: 'Published', numeric: true, title: 'The official rating from the latest monthly supplement' },
     { key: 'live', label: 'Live', numeric: true, title: 'Includes tournaments rated since the monthly supplement' },
     { key: 'lastChange', label: 'Last event', numeric: true },
-    { key: 'periodChange', label: periodLabel(), numeric: true, title: `Net change over ${periodLabel()}` },
-    { key: 'periodEvents', label: 'Events', numeric: true, title: `Tournaments in ${periodLabel()}` },
-    { key: 'lastRated', label: 'Last rated', numeric: true },
+    { key: 'periodChange', label: `Change · ${periodLabel}`, numeric: true, title: `Net rating change over ${periodLabel}` },
+    { key: 'periodEvents', label: `Events · ${periodLabel}`, numeric: true, title: `How many tournaments were rated in ${periodLabel}` },
+    { key: 'lastRated', label: 'Last tournament', numeric: true, title: 'When the latest tournament (any rating) was rated' },
   ]
   const sorted = sortRows(rows, sort.key, sort.descending)
   const failed = group.memberIDs.filter((id) => players.get(id) instanceof Error)
@@ -365,45 +405,69 @@ function rosterTable(group: Group, rows: PlayerRow[]): string {
 }
 
 function resultsHTML(ready: Player[]): string {
-  const toggle = `<div class="segmented small-seg" role="radiogroup" aria-label="Group results">
-    <button type="button" role="radio" aria-checked="${resultsMode === 'event'}" data-results="event">By event</button>
-    <button type="button" role="radio" aria-checked="${resultsMode === 'player'}" data-results="player">By player</button>
-  </div>`
-  const crosstable = (eventID?: string, section?: number) => (eventID ? `/#/event/${esc(eventID)}${section != null ? `?section=${section}` : ''}` : undefined)
-  const change = (pre?: number, post?: number) => (pre != null && post != null ? deltaBadge(post - pre) : '')
-  let body: string
-  if (resultsMode === 'event') {
-    const results = resultsByEvent(ready, ratingType, period)
-    body = results.length
-      ? `<div class="result-list">${results
-          .map(
-            (r) => `<div class="result-item">
-              <a class="result-head" href="${crosstable(r.eventID, r.section)}" target="_blank" rel="noopener"><strong>${esc(r.name)}</strong><small class="muted">${eventDate(r.date)}</small></a>
-              <span class="result-players">${r.players.map((p) => `<span>${playerButton(p.id, p.name.split(' ')[0])}${change(p.pre, p.post)}</span>`).join('')}</span>
-            </div>`,
-          )
-          .join('')}</div>`
-      : `<p class="muted small">No rated events in ${periodLabel()}.</p>`
-  } else {
-    const byPlayer = resultsByPlayer(ready, ratingType, period)
-    body = byPlayer.length
-      ? `<div class="result-list">${byPlayer
-          .map(
-            (p) => `<div class="result-item">
-              <span class="result-head">${playerButton(p.id, p.name)}</span>
-              ${p.events
-                .map((e) => {
-                  const href = crosstable(e.eventID, e.section)
-                  const label = `<span class="player-event-name">${esc(e.name)}</span><small class="muted">${eventDate(e.date)}</small>${change(e.pre, e.post)}`
-                  return href ? `<a class="player-event" href="${href}" target="_blank" rel="noopener">${label}</a>` : `<span class="player-event">${label}</span>`
-                })
-                .join('')}
-            </div>`,
-          )
-          .join('')}</div>`
-      : `<p class="muted small">No rated events in ${periodLabel()}.</p>`
+  const rs = settings.results
+  const type = rs.type === 'blitz' ? 'regular' : rs.type
+  const rows = resultRows(ready, type, rs.period, rs.result, rs.player || undefined)
+  const playerOptions: [string, string][] = [['', 'All players'], ...ready.map((p) => [p.id, p.name] as [string, string])]
+  const playerLabel = rs.player ? (ready.find((p) => p.id === rs.player)?.name ?? 'All players') : 'All players'
+  const gained = rows.filter((r) => r.change > 0).length
+  const lost = rows.filter((r) => r.change < 0).length
+  const net = rows.reduce((sum, r) => sum + r.change, 0)
+
+  const head = `<div class="widget-head">
+      <h2 class="section-label">Recent results</h2>
+      <div class="coach-controls">
+        ${controlChip('results.period', 'Period', periods[rs.period], periodOptions(), String(rs.period))}
+        ${controlChip('results.type', 'Rating', perEventTypes[type], Object.entries(perEventTypes), type)}
+        ${controlChip('results.result', 'Result', resultFilters[rs.result], Object.entries(resultFilters), rs.result)}
+        ${controlChip('results.player', 'Player', playerLabel, playerOptions, rs.player)}
+        <div class="segmented small-seg" role="radiogroup" aria-label="Group results by">
+          <button type="button" role="radio" aria-checked="${rs.mode === 'event'}" data-results="event">By event</button>
+          <button type="button" role="radio" aria-checked="${rs.mode === 'player'}" data-results="player">By player</button>
+        </div>
+      </div>
+    </div>
+    <p class="results-summary small">${rows.length} ${rows.length === 1 ? 'result' : 'results'} · <span class="text-up">▲ ${gained} gained</span> · <span class="text-down">▼ ${lost} lost</span> · net ${rows.length ? deltaBadge(net) : '–'}</p>`
+
+  if (!rows.length) return `${head}<p class="muted">No ${rs.result === 'all' ? '' : `${resultFilters[rs.result].toLowerCase()} `}results in ${periods[rs.period]}.</p>`
+
+  const shown = rows.slice(0, resultsLimit)
+  const crosstable = (r: ResultRow) => (r.eventID ? `/#/event/${esc(r.eventID)}${r.section != null ? `?section=${r.section}` : ''}` : undefined)
+  const eventLink = (r: ResultRow) => {
+    const href = crosstable(r)
+    return href ? `<a class="event-link" href="${href}" target="_blank" rel="noopener">${esc(r.event)}</a>` : esc(r.event)
   }
-  return `<div class="side-head"><h2 class="section-label">Recent results</h2>${toggle}</div>${body}`
+  const ratingCells = (r: ResultRow) => `<td class="num mono">${r.pre} → ${r.post}</td><td class="num">${deltaBadge(r.change)}</td>`
+
+  let body = ''
+  if (rs.mode === 'event') {
+    let current = ''
+    for (const r of shown) {
+      const key = `${r.eventID ?? r.event}|${r.date?.getTime()}`
+      if (key !== current) {
+        current = key
+        const players = rows.filter((x) => `${x.eventID ?? x.event}|${x.date?.getTime()}` === key)
+        body += `<tr class="group-row"><td colspan="2">${eventLink(r)}</td><td class="muted small" colspan="2">${eventDate(r.date)} · ${players.length} ${players.length === 1 ? 'player' : 'players'}</td></tr>`
+      }
+      body += `<tr><td class="indent">${playerButton(r.playerID, r.playerName)}</td><td></td>${ratingCells(r)}</tr>`
+    }
+  } else {
+    const byPlayer = new Map<string, ResultRow[]>()
+    for (const r of shown) byPlayer.set(r.playerID, [...(byPlayer.get(r.playerID) ?? []), r])
+    for (const [id, list] of byPlayer) {
+      const all = rows.filter((x) => x.playerID === id)
+      const playerNet = all.reduce((sum, x) => sum + x.change, 0)
+      body += `<tr class="group-row"><td colspan="2">${playerButton(id, list[0].playerName)}</td><td class="muted small">${all.length} ${all.length === 1 ? 'tournament' : 'tournaments'}</td><td class="num">${deltaBadge(playerNet)}</td></tr>`
+      for (const r of list) body += `<tr><td class="indent">${eventLink(r)}</td><td class="muted small nowrap">${eventDate(r.date)}</td>${ratingCells(r)}</tr>`
+    }
+  }
+
+  return `${head}
+    <div class="table-scroll"><table class="results-table">
+      <thead><tr><th>${rs.mode === 'event' ? 'Tournament / player' : 'Player / tournament'}</th><th>${rs.mode === 'event' ? '' : 'Date'}</th><th class="num">Rating</th><th class="num">Change</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table></div>
+    ${rows.length > resultsLimit ? `<button class="button show-more" type="button" data-action="more-results">Show more (${rows.length - resultsLimit} more)</button>` : ''}`
 }
 
 // MARK: - Player card (tap a name or a chart dot)
@@ -416,6 +480,7 @@ function openPlayerCard(id: string, anchor: HTMLElement) {
   closePlayerCard()
   const p = loadedPlayer(id)
   if (!p) return
+  const { type: ratingType, period } = settings.players
   const rows = (['regular', 'quick', 'blitz'] as RatingType[]).map((t) => ({ t, row: playerRow(p, t, period) }))
   const last = p.events[0]
   const lastResult = last ? (resultOf(last, ratingType) ?? last.regular ?? last.quick) : undefined
@@ -430,7 +495,7 @@ function openPlayerCard(id: string, anchor: HTMLElement) {
     </div>
     ${badgeSlot(p.id, 'all')}
     <table class="pc-ratings">
-      <thead><tr><th></th><th>Published</th><th>Live</th><th>${esc(periodLabel())}</th></tr></thead>
+      <thead><tr><th></th><th>Published</th><th>Live</th><th>${esc(periods[period])}</th></tr></thead>
       <tbody>${rows
         .map(
           ({ t, row }) => `<tr><th>${ratingTypes[t]}</th><td class="mono">${row.published ?? '–'}</td><td class="mono${row.live != null && row.live !== row.published ? ' live-new' : ''}">${row.live ?? '–'}</td>
@@ -495,8 +560,8 @@ document.addEventListener('click', async (e) => {
   }
   const resultsButton = target.closest<HTMLElement>('[data-results]')
   if (resultsButton) {
-    resultsMode = resultsButton.dataset.results as 'event' | 'player'
-    saveSetting('coach.results', resultsMode)
+    settings.results.mode = resultsButton.dataset.results as 'event' | 'player'
+    saveSettings()
     renderGroupContent()
     return
   }
@@ -564,6 +629,10 @@ document.addEventListener('click', async (e) => {
         location.hash = ''
       }
       break
+    case 'more-results':
+      resultsLimit += resultsPage
+      renderGroupContent()
+      break
     case 'export':
       download(`openboard-coach-groups-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(exportFile(groups.all()), null, 2))
       break
@@ -572,14 +641,14 @@ document.addEventListener('click', async (e) => {
 
 document.addEventListener('change', async (e) => {
   const target = e.target as HTMLInputElement | HTMLSelectElement
-  if (target.dataset.control === 'rating') {
-    ratingType = target.value as RatingType
-    saveSetting('coach.rating', ratingType)
-    renderGroup()
-  } else if (target.dataset.control === 'period') {
-    period = Number(target.value) as PeriodDays
-    saveSetting('coach.period', String(period))
-    renderGroup()
+  const control = target.dataset.control
+  if (control) {
+    const [widget, key] = control.split('.') as [keyof Settings, string]
+    const value = key === 'period' ? Number(target.value) : target.value
+    ;(settings[widget] as Record<string, unknown>)[key] = value
+    if (widget === 'results') resultsLimit = resultsPage
+    saveSettings()
+    renderGroupContent()
   } else if (target.dataset.action === 'import-file' && (target as HTMLInputElement).files?.[0]) {
     const input = target as HTMLInputElement
     try {
@@ -656,6 +725,8 @@ window.addEventListener('hashchange', () => {
   searchQuery = ''
   searchResults = []
   resetChart()
+  settings.results.player = ''
+  resultsLimit = resultsPage
   route()
 })
 startBadges(document.body)

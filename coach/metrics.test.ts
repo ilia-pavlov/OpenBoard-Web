@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Player } from '../src/models'
-import { chartSeries, groupSummary, lastRatedText, playerRow, resultsByEvent, resultsByPlayer, sortRows } from './metrics'
+import { chartSeries, groupSummary, lastRatedText, matchesResult, playerRow, resultRows, sortRows } from './metrics'
 
 const now = new Date(2026, 9, 3)
 const daysAgo = (n: number) => new Date(2026, 9, 3 - n)
@@ -45,22 +45,28 @@ describe('groupSummary', () => {
   })
 })
 
-describe('results', () => {
-  it('groups players by event, newest first, within the period', () => {
-    const results = resultsByEvent([alex, sam], 'regular', 90, now)
-    expect(results.map((r) => [r.name, r.players.map((p) => p.name)])).toEqual([
-      ['Fall Quads', ['Alex Rivera', 'Sam Taylor']],
-      ['Summer Open', ['Alex Rivera']],
+describe('resultRows', () => {
+  it('lists every result in the period for the rating type, newest first', () => {
+    const rows = resultRows([alex, sam], 'regular', 90, 'all', undefined, now)
+    expect(rows.map((r) => [r.event, r.playerName, r.change])).toEqual([
+      ['Fall Quads', 'Alex Rivera', 30],
+      ['Summer Open', 'Alex Rivera', 20],
     ])
-    expect(results[0].players[1]).toMatchObject({ pre: 800, post: 790 }) // quick when there's no regular
+    // Sam's Fall Quads was Quick-only, so it appears under Quick.
+    expect(resultRows([alex, sam], 'quick', 90, 'all', undefined, now).map((r) => [r.playerName, r.change])).toEqual([
+      ['Alex Rivera', 10],
+      ['Sam Taylor', -10],
+    ])
   })
 
-  it('lists each player\'s latest events, most recently active first', () => {
-    const byPlayer = resultsByPlayer([sam, alex], 'regular', 90, now)
-    expect(byPlayer.map((p) => [p.name, p.events.map((e) => e.name)])).toEqual([
-      ['Sam Taylor', ['Fall Quads']],
-      ['Alex Rivera', ['Fall Quads', 'Summer Open']],
-    ])
+  it('filters by result and by player', () => {
+    expect(resultRows([alex, sam], 'quick', 90, 'down', undefined, now).map((r) => r.playerName)).toEqual(['Sam Taylor'])
+    expect(resultRows([alex, sam], 'regular', 0, 'all', '99000001', now)).toHaveLength(3)
+    expect(resultRows([alex, sam], 'regular', 30, 'all', undefined, now)).toHaveLength(1)
+  })
+
+  it('matches results', () => {
+    expect([matchesResult('up', 5), matchesResult('down', 5), matchesResult('even', 0), matchesResult('all', -3)]).toEqual([true, false, true, true])
   })
 })
 

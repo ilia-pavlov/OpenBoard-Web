@@ -253,3 +253,27 @@ body.coach {
   pointer-events: none;
 }
 .group-tip strong { font-size: 13px; }
+
+/* MARK: Widgets (each with its own controls) */
+
+.widget { padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.widget-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.widget-head .section-label { margin: 0; font-size: 13px; }
+.widget > p.muted { margin: 0; }
+.coach-controls .chip { font-size: 13px; padding: 6px 12px; }
+.table-scroll { overflow-x: auto; margin: 0 -18px; padding: 0 18px; }
+.roster-card { overflow: visible; }
+
+.results-summary { margin: 0; color: var(--text-2); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.results-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.results-table th { text-align: left; padding: 8px 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-2); border-bottom: 1px solid var(--hairline); }
+.results-table td { padding: 7px 8px; border-top: 1px solid color-mix(in srgb, var(--hairline) 60%, transparent); vertical-align: middle; }
+.results-table th.num, .results-table td.num { text-align: right; white-space: nowrap; }
+.results-table .group-row td { padding-top: 14px; border-top: 1px solid var(--hairline); background: color-mix(in srgb, var(--text) 3%, transparent); }
+.results-table .group-row .event-link, .results-table .group-row .player-link { font-weight: 700; font-size: 15px; }
+.results-table td.indent { padding-left: 22px; }
+.event-link { color: var(--text); font-weight: 600; }
+.event-link:hover { color: var(--gold); text-decoration: underline; text-underline-offset: 3px; }
+.nowrap { white-space: nowrap; }
+.show-more { align-self: center; }
+.group-chart svg.filtered .series polyline { opacity: 0.45; }

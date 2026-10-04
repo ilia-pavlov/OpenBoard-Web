@@ -76,60 +76,50 @@ export function groupSummary(rows: PlayerRow[]): GroupSummary {
   }
 }
 
-export interface ResultEntry {
-  id: string
-  name: string
-  pre?: number
-  post?: number
-}
+/** Filter by how a tournament went for the player. */
+export const resultFilters = { all: 'All results', up: 'Gained', down: 'Lost', even: 'No change' } as const
+export type ResultFilter = keyof typeof resultFilters
 
-export interface GroupResult {
-  eventID: string
+export const matchesResult = (filter: ResultFilter, change: number) =>
+  filter === 'all' || (filter === 'up' && change > 0) || (filter === 'down' && change < 0) || (filter === 'even' && change === 0)
+
+export interface ResultRow {
+  eventID?: string
   section?: number
-  name: string
+  event: string
   date: Date | null
-  players: ResultEntry[]
+  playerID: string
+  playerName: string
+  pre: number
+  post: number
+  change: number
 }
 
-/** Rated events in the period with every group member who played, newest first. */
-export function resultsByEvent(players: Player[], type: RatingType, days: PeriodDays, now = new Date(), limit = 12): GroupResult[] {
+/**
+ * Every tournament result in the period for a rating type (one row per player
+ * per tournament), newest first, filtered by result and optionally one player.
+ */
+export function resultRows(
+  players: Player[],
+  type: RatingType,
+  days: PeriodDays,
+  result: ResultFilter = 'all',
+  playerID?: string,
+  now = new Date(),
+): ResultRow[] {
   const since = sinceOf(days, now)
-  const byEvent = new Map<string, GroupResult>()
+  const rows: ResultRow[] = []
   for (const p of players) {
+    if (playerID && p.id !== playerID) continue
     for (const e of p.events) {
-      if (!e.id || (e.date?.getTime() ?? 0) < since) continue
-      const r = resultOf(e, type) ?? e.regular ?? e.quick
-      const result = byEvent.get(e.id) ?? { eventID: e.id, section: e.section, name: e.name, date: e.date, players: [] }
-      if (!result.players.some((x) => x.id === p.id)) result.players.push({ id: p.id, name: p.name, pre: r?.pre, post: r?.post })
-      byEvent.set(e.id, result)
+      const r = resultOf(e, type)
+      if (!hasChange(r) || (e.date?.getTime() ?? 0) < since) continue
+      const change = r.post - r.pre
+      if (!matchesResult(result, change)) continue
+      rows.push({ eventID: e.id, section: e.section, event: e.name, date: e.date, playerID: p.id, playerName: p.name, pre: r.pre, post: r.post, change })
     }
   }
-  return [...byEvent.values()].sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0)).slice(0, limit)
-}
-
-export interface PlayerResults {
-  id: string
-  name: string
-  events: { eventID?: string; section?: number; name: string; date: Date | null; pre?: number; post?: number }[]
-}
-
-/** Each player's latest events in the period, players with the most recent event first. */
-export function resultsByPlayer(players: Player[], type: RatingType, days: PeriodDays, now = new Date(), perPlayer = 3): PlayerResults[] {
-  const since = sinceOf(days, now)
-  return players
-    .map((p) => ({
-      id: p.id,
-      name: p.name,
-      events: p.events
-        .filter((e) => (e.date?.getTime() ?? 0) >= since)
-        .slice(0, perPlayer)
-        .map((e) => {
-          const r = resultOf(e, type) ?? e.regular ?? e.quick
-          return { eventID: e.id, section: e.section, name: e.name, date: e.date, pre: r?.pre, post: r?.post }
-        }),
-    }))
-    .filter((p) => p.events.length)
-    .sort((a, b) => (b.events[0].date?.getTime() ?? 0) - (a.events[0].date?.getTime() ?? 0))
+  return rows.sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0) || a.playerName.localeCompare(b.playerName))
 }
 
 export interface ChartSeries {
