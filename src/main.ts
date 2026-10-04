@@ -33,6 +33,8 @@ function currentAppearance(): Appearance {
 function applyAppearance(a: Appearance) {
   if (a === 'system') delete document.documentElement.dataset.theme
   else document.documentElement.dataset.theme = a
+  const dark = a === 'dark' || (a === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0B0E13' : '#F2F4F8')
   const button = document.querySelector<HTMLButtonElement>('.appearance')!
   button.textContent = icons[a]
   button.title = `Appearance: ${a[0].toUpperCase()}${a.slice(1)}`

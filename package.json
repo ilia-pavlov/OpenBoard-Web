@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "deploy": "npm run build && wrangler deploy",
     "preview:worker": "npm run build && wrangler dev",
-    "cf-typegen": "wrangler types worker/worker-configuration.d.ts"
+    "cf-typegen": "wrangler types worker/worker-configuration.d.ts",
+    "preview:upload": "npm run build && wrangler versions upload --preview-alias staging"
   },
   "devDependencies": {
     "happy-dom": "^20.14.5",

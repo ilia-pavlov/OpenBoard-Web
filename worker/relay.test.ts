@@ -40,6 +40,11 @@ describe('canonicalRedirect', () => {
     expect(canonicalRedirect(new URL('https://openboard-web.openboard-web.workers.dev/index.html?x=1'), host)).toBe('https://openboard.online/index.html?x=1')
   })
 
+  it('serves preview URLs directly so a version can be tried before it goes live', () => {
+    expect(canonicalRedirect(new URL('https://staging-openboard-web.openboard-web.workers.dev/'), host)).toBeUndefined()
+    expect(canonicalRedirect(new URL('https://3f2a91c0-openboard-web.openboard-web.workers.dev/'), host)).toBeUndefined()
+  })
+
   it('serves the canonical host and local development directly', () => {
     expect(canonicalRedirect(new URL('https://openboard.online/'), host)).toBeUndefined()
     expect(canonicalRedirect(new URL('http://127.0.0.1:8787/'), host)).toBeUndefined()
