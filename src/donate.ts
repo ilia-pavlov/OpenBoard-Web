@@ -1,6 +1,6 @@
-// "Support OpenBoard": a link to a Stripe Payment Link. Each gift is $7 and
-// the donor picks how many (quantity 1–99). Stripe hosts the checkout (cards,
-// Apple Pay, Google Pay), so the site never handles payment details. Kept quiet on purpose: kids use this
+// "Support OpenBoard": a link to a Stripe Payment Link where the donor picks
+// the amount ($5 suggested). Stripe hosts the checkout (cards, Apple Pay,
+// Google Pay), so the site never handles payment details. Kept quiet on purpose: kids use this
 // site, so support asks appear only on About and at the end of Events, never as
 // pop-ups or on the screens kids use most.
 
@@ -21,7 +21,7 @@ export function supportCard(): string {
     <h2 id="support-title">Support OpenBoard</h2>
     <p>OpenBoard is free, with no ads and no accounts. If it helps your family, a small gift keeps it that way: it pays for the domain and hosting and gives me time to build new features.</p>
     ${link('button prominent big support-button', '♥ Support OpenBoard')}
-    <p class="support-note">Secure checkout by Stripe. Each gift is $7; add more on the next screen to give more. Apple Pay, Google Pay and cards accepted. Gifts aren't tax-deductible.</p>
+    <p class="support-note">Secure checkout by Stripe. Choose any amount ($5 suggested). Apple Pay, Google Pay and cards accepted. Gifts aren't tax-deductible.</p>
   </section>`
 }
 
