@@ -3,6 +3,7 @@ import { startRouter } from './router'
 import { startBadges } from './toplists'
 import { emptyState } from './ui'
 import { aboutView } from './views/about'
+import { thanksView } from './views/thanks'
 import { crosstableView } from './views/crosstable'
 import { eventsView } from './views/events'
 import { historyView } from './views/history'
@@ -60,6 +61,7 @@ startRouter(
     { pattern: /^\/$/, view: myCardView, tab: 'card' },
     { pattern: /^\/search$/, view: searchView, tab: 'search' },
     { pattern: /^\/about$/, view: aboutView },
+    { pattern: /^\/thanks$/, view: thanksView },
     { pattern: /^\/player\/(\d{8})$/, view: profileView, tab: 'search' },
     { pattern: /^\/player\/(\d{8})\/history$/, view: historyView, tab: 'search' },
     { pattern: /^\/event\/(\d{12})$/, view: crosstableView },

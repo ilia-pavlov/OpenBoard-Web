@@ -2,6 +2,7 @@
 // brand in the header.
 
 import type { View } from '../router'
+import { supportCard, supportLink } from '../donate'
 import { chevron, prefs } from '../ui'
 
 const features: { icon: string; title: string; text: string; href: string }[] = [
@@ -28,6 +29,8 @@ export const aboutView: View = ({ root }) => {
       <p>I built OpenBoard to help <strong>parents find tournaments</strong> for their kids, to let <strong>kids follow their friends and rivals</strong> and <strong>track their points</strong>, and overall to help <strong>make chess more popular in the US</strong>.</p>
       <p class="muted">The official tools are built for organizers and run slowly on phones. OpenBoard puts what families actually check — the next tournament, the new rating, how a friend did — one tap away.</p>
     </section>
+
+    ${supportCard()}
 
     <div class="about-audiences">
       <div class="card audience">
@@ -63,6 +66,7 @@ export const aboutView: View = ({ root }) => {
     <section class="about-footer">
       <p>Ratings come from US Chess's <a href="https://ratings.uschess.org" target="_blank" rel="noopener">ratings site (MUIR)</a>. Tournaments come from US Chess's <a href="https://new.uschess.org/upcoming-tournaments" target="_blank" rel="noopener">Tournament Life Announcements</a> and Plan Ahead Calendar.</p>
       <p>Also on iPhone and iPad: <a href="https://github.com/ilia-pavlov/OpenBoard" target="_blank" rel="noopener">OpenBoard for iOS</a>.</p>
+      ${supportLink()}
       <p class="muted">Not affiliated with or endorsed by the US Chess Federation. Want to play rated games? <a href="https://www.uschess.org/join" target="_blank" rel="noopener">Join US Chess</a>.</p>
     </section>`
 }

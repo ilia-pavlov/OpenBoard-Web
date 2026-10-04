@@ -9,6 +9,7 @@ import {
   type MajorEvent, type Radius, type TournamentKind, type TournamentListing, type UpcomingWindow, fetchMajorEvents,
   fetchUpcoming, kinds, majorEventID, matchesKind, occursIn, radii, windowRange, windows,
 } from '../tournaments'
+import { supportLine } from '../donate'
 import { chevron, dateRange, emptyState, errorCard, esc, prefs, sectionLabel, skeleton } from '../ui'
 
 type Scope = 'near' | 'majors'
@@ -96,7 +97,8 @@ export const eventsView: View = ({ root, params, signal }) => {
       ${sectionLabel(`${dated.length} ${dated.length === 1 ? 'tournament' : 'tournaments'} within ${radius} mi`)}
       <div class="stack">${dated.map(listingRow).join('')}</div>
       ${recurring.length ? `${sectionLabel('Weekly & recurring')}<div class="stack">${recurring.map(listingRow).join('')}</div>` : ''}
-      <p class="footnote center">Listings from US Chess Tournament Life Announcements.</p>`
+      <p class="footnote center">Listings from US Chess Tournament Life Announcements.</p>
+      ${supportLine()}`
   }
 
   // MARK: Major events
@@ -113,7 +115,8 @@ export const eventsView: View = ({ root, params, signal }) => {
         const upcoming = events.filter((e) => !e.startDate || e.startDate >= today)
         body().innerHTML = `
           <p class="muted small">National championships and events with $5,000+ guaranteed prizes, from the US Chess Plan Ahead Calendar.</p>
-          ${upcoming.length ? `<div class="stack">${upcoming.map(majorRow).join('')}</div>` : emptyState('🏆', 'No major events listed', 'US Chess has not posted upcoming major events yet.')}`
+          ${upcoming.length ? `<div class="stack">${upcoming.map(majorRow).join('')}</div>` : emptyState('🏆', 'No major events listed', 'US Chess has not posted upcoming major events yet.')}
+          ${supportLine()}`
       },
       (error: Error) => {
         if (!signal.aborted && state.scope === 'majors') body().innerHTML = errorCard(error.message)
