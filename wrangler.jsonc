@@ -10,8 +10,9 @@
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
     // The page itself runs the Worker too, so www and the old workers.dev
-    // address can be redirected to the canonical host.
-    "run_worker_first": ["/api/*", "/", "/index.html"]
+    // address can be redirected to the canonical host; /p/, /e/ and /t/ are
+    // share links that get link-preview tags.
+    "run_worker_first": ["/api/*", "/", "/index.html", "/p/*", "/e/*", "/t/*"]
   },
   "vars": {
     "CANONICAL_HOST": "openboard.online"

@@ -11,6 +11,7 @@ import { myCardView, profileView } from './views/player'
 import { searchView } from './views/search'
 import { watchingView } from './views/watching'
 import { checkIfDue, registerServiceWorker } from './watchlist'
+import { openSharedLink } from './share'
 import { top100BrowseView, top100ListView } from './views/top100'
 import { majorEventView, tournamentView } from './views/tournament'
 
@@ -50,6 +51,9 @@ document.querySelector('.appearance')!.addEventListener('click', () => {
 applyAppearance(currentAppearance())
 
 // MARK: - Routes
+
+// Opened from a share link (/p/…, /e/…, /t/…): go to that screen.
+openSharedLink()
 
 const app = document.getElementById('app')!
 startBadges(app)

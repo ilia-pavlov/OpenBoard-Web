@@ -9,6 +9,7 @@ import { delta } from '../models'
 import type { View } from '../router'
 import { replaceQuery } from '../router'
 import { badgeSlot } from '../toplists'
+import { eventShareURL, share, shareButton } from '../share'
 import { chevron, emptyState, errorCard, esc, eventDate, prefs, signed, skeleton, stateChip } from '../ui'
 
 export const crosstableView: View = ({ root, params, signal }, [eventID]) => {
@@ -59,6 +60,7 @@ export const crosstableView: View = ({ root, params, signal }, [eventID]) => {
       <header class="event-header">
         <h1 class="event-title">${esc(event.name)}</h1>
         <p class="muted small">${meta} · <button class="copy-id inline" type="button" data-action="copy-id">Event ${esc(event.id)}</button></p>
+        <div class="header-actions">${shareButton('Share crosstable', 'button icon-label')}</div>
       </header>
       ${event.sections.length > 1 ? sectionPicker(event, sectionIndex, highlight) : ''}
       ${section ? standingsList(section) : emptyState('♜', 'No sections', 'US Chess has no standings for this event yet.')}`
@@ -94,6 +96,14 @@ export const crosstableView: View = ({ root, params, signal }, [eventID]) => {
         byRank: new Map(section.players.map((p) => [p.rank, p])),
         highlight,
         expanded: expanded.has(id),
+      })
+      return
+    }
+    if (target.dataset.action === 'share') {
+      void share(target, {
+        title: `${event.name} · OpenBoard`,
+        text: `${event.name}: crosstable on OpenBoard`,
+        url: eventShareURL(event.id, highlight),
       })
       return
     }

@@ -10,6 +10,7 @@ import {
 } from '../tournaments'
 import { dateRange, errorCard, esc, isoDay, phone, prefs, sectionLabel, skeleton } from '../ui'
 import { dateBlock } from './events'
+import { share, shareButton, tournamentShareURL } from '../share'
 
 const isApple = () => /iPhone|iPad|Macintosh/.test(navigator.userAgent)
 
@@ -39,6 +40,7 @@ export const tournamentView: View = ({ root, signal }, [slug]) => {
         <h1 class="event-title">${esc(d.name)}</h1>
         ${d.startDate ? `<p class="muted">📅 ${esc(dateText(d))}</p>` : ''}
         ${tags.length ? `<div class="tags">${tags.map((t) => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
+        <div class="header-actions">${shareButton('Share tournament', 'button icon-label')}</div>
       </header>
       <div class="action-row">
         ${registerButton(d)}
@@ -61,6 +63,15 @@ export const tournamentView: View = ({ root, signal }, [slug]) => {
     root.onclick = (e) => {
       const target = (e.target as HTMLElement).closest<HTMLElement>('[data-action]')
       switch (target?.dataset.action) {
+        case 'share': {
+          const where = [d.city, d.state].filter(Boolean).join(', ')
+          void share(target, {
+            title: `${d.name} · OpenBoard`,
+            text: [d.name, d.startDate ? dateText(d) : null, where || null].filter(Boolean).join(' · '),
+            url: tournamentShareURL(d.id),
+          })
+          break
+        }
         case 'save': {
           const saved = prefs.toggleSaved({
             id: d.id,

@@ -13,6 +13,7 @@ import {
 import type { View } from '../router'
 import { mountBestWins } from './bestwins-card'
 import { snapshot } from '../watchlist'
+import { playerShareURL, share, shareButton } from '../share'
 import { badgeSlot } from '../toplists'
 
 export const myCardView: View = (ctx) => {
@@ -74,6 +75,16 @@ function loadPlayer(ctx: Parameters<View>[0], id: string, mode: 'mycard' | 'prof
         prefs.toggleWatch(snapshot(latest))
         target.outerHTML = watchButton(id)
         break
+      case 'share': {
+        if (!latest) break
+        const regular = latest.ratings.regular?.value
+        void share(target, {
+          title: `${latest.name} · OpenBoard`,
+          text: `${latest.name} on OpenBoard${regular != null ? `: Regular ${regular}` : ''}`,
+          url: playerShareURL(id),
+        })
+        break
+      }
     }
   }
 }
@@ -94,7 +105,10 @@ function playerPage(player: Player, mode: 'mycard' | 'profile'): string {
   return `
     <div class="title-row">
       <h1 class="screen-title">${esc(title)}</h1>
-      ${mode === 'profile' ? watchButton(player.id) : `<a class="link-button" href="#/watching">Watching</a>`}
+      <div class="title-actions">
+        ${mode === 'profile' ? watchButton(player.id) : `<a class="link-button" href="#/watching">Watching</a>`}
+        ${shareButton('Share', 'button icon-label')}
+      </div>
     </div>
     <div class="id-row">
       <button class="copy-id" type="button" data-action="copy-id" aria-label="Copy member ID ${player.id}">ID ${player.id}</button>
