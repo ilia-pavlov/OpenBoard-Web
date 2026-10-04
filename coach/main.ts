@@ -112,12 +112,14 @@ function saveSetting(key: string, value: string) {
 
 /** Each widget has its own controls, remembered in this browser. */
 interface Settings {
+  overview: { type: RatingType; period: PeriodDays }
   players: { type: RatingType; period: PeriodDays }
   chart: { type: RatingType; period: PeriodDays; result: ResultFilter }
   results: { type: RatingType; period: PeriodDays; result: ResultFilter; player: string; mode: 'event' | 'player' }
 }
 
 const defaultSettings: Settings = {
+  overview: { type: 'regular', period: 90 },
   players: { type: 'regular', period: 90 },
   chart: { type: 'regular', period: 365, result: 'all' },
   results: { type: 'regular', period: 90, result: 'all', player: '', mode: 'event' },
@@ -127,6 +129,7 @@ function readSettings(): Settings {
   try {
     const saved = JSON.parse(localStorage.getItem('coach.settings') ?? '{}') as Partial<Settings>
     return {
+      overview: { ...defaultSettings.overview, ...saved.overview },
       players: { ...defaultSettings.players, ...saved.players },
       chart: { ...defaultSettings.chart, ...saved.chart },
       results: { ...defaultSettings.results, ...saved.results, player: '' },
@@ -291,21 +294,32 @@ function renderGroupContent() {
   load(group.memberIDs)
 
   const ready = group.memberIDs.map(loadedPlayer).filter((p): p is Player => !!p)
-  const { players: ps, chart: cs } = settings
+  const { overview: os, players: ps, chart: cs } = settings
   const rows = ready.map((p) => playerRow(p, ps.type, ps.period))
-  const summary = groupSummary(rows)
+  const summary = groupSummary(ready.map((p) => playerRow(p, os.type, os.period)))
   const pending = group.memberIDs.filter((id) => !players.has(id)).length
   const onTop100 = ready.filter((p) => ranksFor(p.id).length).length
   const typeLabel = ratingTypes[ps.type]
   const periodLabel = periods[ps.period]
+  const overviewType = ratingTypes[os.type]
+  const overviewPeriod = periods[os.period]
 
   host.innerHTML = `
-    <div class="tiles">
-      ${tile('Average live rating', summary.averageLive != null ? String(summary.averageLive) : '–', `${typeLabel}, rated players`)}
-      ${tile(`Change · ${periodLabel}`, ps.type === 'blitz' ? '–' : summary.periodChange ? signed(summary.periodChange) : '0', `${typeLabel} points, whole group`, summary.periodChange > 0 ? 'up' : summary.periodChange < 0 ? 'down' : '')}
-      ${tile(`Events · ${periodLabel}`, num(summary.periodEvents), `${typeLabel}-rated tournaments`)}
-      ${tile('On a Top 100 list', String(onTop100), 'US Chess, this month')}
-    </div>
+    <section class="overview">
+      <div class="widget-head">
+        <h2 class="section-label">Overview</h2>
+        <div class="coach-controls">
+          ${controlChip('overview.period', 'Period', overviewPeriod, periodOptions(), String(os.period))}
+          ${controlChip('overview.type', 'Rating', overviewType, Object.entries(ratingTypes), os.type)}
+        </div>
+      </div>
+      <div class="tiles">
+        ${tile('Average live rating', summary.averageLive != null ? String(summary.averageLive) : '–', `${overviewType}, rated players`)}
+        ${tile(`Change · ${overviewPeriod}`, os.type === 'blitz' ? '–' : summary.periodChange ? signed(summary.periodChange) : '0', `${overviewType} points, whole group`, summary.periodChange > 0 ? 'up' : summary.periodChange < 0 ? 'down' : '')}
+        ${tile(`Events · ${overviewPeriod}`, os.type === 'blitz' ? '–' : num(summary.periodEvents), `${overviewType}-rated tournaments`)}
+        ${tile('On a Top 100 list', String(onTop100), 'US Chess, this month')}
+      </div>
+    </section>
     ${pending ? `<p class="muted small loading-line"><span class="spinner" aria-hidden="true"></span> Loading ${pending} of ${group.memberIDs.length} players…</p>` : ''}
 
     <section class="card widget chart-card-wide">

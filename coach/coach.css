@@ -277,3 +277,4 @@ body.coach {
 .nowrap { white-space: nowrap; }
 .show-more { align-self: center; }
 .group-chart svg.filtered .series polyline { opacity: 0.45; }
+.overview { display: flex; flex-direction: column; gap: 10px; }

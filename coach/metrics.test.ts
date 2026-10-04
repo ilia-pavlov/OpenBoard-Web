@@ -65,6 +65,20 @@ describe('resultRows', () => {
     expect(resultRows([alex, sam], 'regular', 30, 'all', undefined, now)).toHaveLength(1)
   })
 
+  it('keeps everyone from one tournament together when two were rated the same day', () => {
+    const day = daysAgo(6)
+    const event = (id: string, name: string, pre: number, post: number) => ({ key: id + name, id, section: 1, name, date: day, regular: { pre, post } })
+    const aaradhya = player('99000003', 'Aaradhya T', {}, [event('202609270001', 'Ostfeld Memorial', 1467, 1460)])
+    const lily = player('99000004', 'Lily L', {}, [event('202609270002', 'Millburn Quads', 564, 469)])
+    const mikaela = player('99000005', 'Mikaela P', {}, [event('202609270001', 'Ostfeld Memorial', 400, 422)])
+    const rows = resultRows([aaradhya, lily, mikaela], 'regular', 90, 'all', undefined, now)
+    expect(rows.map((r) => [r.event, r.playerName])).toEqual([
+      ['Ostfeld Memorial', 'Aaradhya T'],
+      ['Ostfeld Memorial', 'Mikaela P'],
+      ['Millburn Quads', 'Lily L'],
+    ])
+  })
+
   it('matches results', () => {
     expect([matchesResult('up', 5), matchesResult('down', 5), matchesResult('even', 0), matchesResult('all', -3)]).toEqual([true, false, true, true])
   })

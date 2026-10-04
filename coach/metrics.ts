@@ -97,7 +97,9 @@ export interface ResultRow {
 
 /**
  * Every tournament result in the period for a rating type (one row per player
- * per tournament), newest first, filtered by result and optionally one player.
+ * per tournament), filtered by result and optionally one player. Newest first,
+ * then by tournament, so everyone from one tournament stays together even
+ * when another tournament was rated the same day.
  */
 export function resultRows(
   players: Player[],
@@ -119,7 +121,13 @@ export function resultRows(
       rows.push({ eventID: e.id, section: e.section, event: e.name, date: e.date, playerID: p.id, playerName: p.name, pre: r.pre, post: r.post, change })
     }
   }
-  return rows.sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0) || a.playerName.localeCompare(b.playerName))
+  const eventKey = (r: ResultRow) => `${r.eventID ?? ''}|${r.section ?? ''}|${r.event}`
+  return rows.sort(
+    (a, b) =>
+      (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0) ||
+      eventKey(a).localeCompare(eventKey(b)) ||
+      a.playerName.localeCompare(b.playerName),
+  )
 }
 
 export interface ChartSeries {
