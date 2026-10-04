@@ -9,10 +9,13 @@ import { fetchPlayer, searchPlayers } from '../src/api'
 import type { Player, PlayerSummary } from '../src/models'
 import { cached, write as storeWrite } from '../src/store'
 import { badgeSlot, ranksFor, startBadges, topListsReady } from '../src/toplists'
-import { type TournamentListing, fetchUpcoming } from '../src/tournaments'
-import { clockDigits, daysAgo, deltaBadge, emptyState, esc, eventDate, num, prefs, stateChip } from '../src/ui'
+import { clockDigits, deltaBadge, emptyState, esc, eventDate, num, signed, stateChip } from '../src/ui'
+import { renderGroupChart, resetChart } from './chart'
 import { type Group, exportFile, groups, parseExportFile, parseShareRoster, shareRosterURL } from './groups'
-import { type PlayerRow, type SortKey, groupSummary, parseMemberIDs, playerRow, recentResults, sortRows } from './metrics'
+import {
+  type PeriodDays, type PlayerRow, type RatingType, type SortKey, chartSeries, groupSummary, lastRatedText, periods, playerRow,
+  ratingTypes, resultOf, resultsByEvent, resultsByPlayer, sortRows,
+} from './metrics'
 
 const main = document.getElementById('coach')!
 const sidebar = document.querySelector<HTMLElement>('.coach-sidebar')!
@@ -52,8 +55,7 @@ applyAppearance(currentAppearance())
 const concurrency = 3
 const playerTTL = 30 * 60 * 1000
 
-type Loaded = Player | Error
-const players = new Map<string, Loaded>()
+const players = new Map<string, Player | Error>()
 let queue: { id: string; force: boolean }[] = []
 let active = 0
 let redrawPending = false
@@ -95,17 +97,42 @@ function load(ids: string[], force = false) {
   pump()
 }
 
+const loadedPlayer = (id: string) => {
+  const p = players.get(id)
+  return p && !(p instanceof Error) ? p : undefined
+}
+
 // MARK: - State
 
+function readSetting<T extends string>(key: string, allowed: readonly string[], fallback: T): T {
+  try {
+    const v = localStorage.getItem(key)
+    return v && allowed.includes(v) ? (v as T) : fallback
+  } catch {
+    return fallback
+  }
+}
+function saveSetting(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value)
+  } catch {}
+}
+
 let groupID: string | null = null
-let sort: { key: SortKey; descending: boolean } = { key: 'regular', descending: true }
+let ratingType: RatingType = readSetting('coach.rating', Object.keys(ratingTypes), 'regular')
+let period = Number(readSetting('coach.period', Object.keys(periods), '90')) as PeriodDays
+let resultsMode: 'event' | 'player' = readSetting('coach.results', ['event', 'player'], 'event')
+let sort: { key: SortKey; descending: boolean } = { key: 'live', descending: true }
 let addOpen = false
-let searchResults: PlayerSummary[] = []
+let renaming = false
 let searchQuery = ''
+let searchResults: PlayerSummary[] = []
 let searchTimer: number | undefined
 let message = ''
+let disposeChart: (() => void) | undefined
 
 const currentGroup = (): Group | undefined => (groupID ? groups.get(groupID) : undefined)
+const periodLabel = () => periods[period]
 
 // MARK: - Sidebar
 
@@ -133,17 +160,17 @@ function renderSidebar() {
     </div>`
 }
 
-// MARK: - Main views
+// MARK: - Welcome and shared-roster screens
 
 function renderWelcome() {
   main.innerHTML = `
     <section class="coach-welcome">
       <div class="about-crown" aria-hidden="true">♛</div>
       <h1>OpenBoard for Coaches</h1>
-      <p class="about-tagline">Your whole team on one screen: every player's rating, recent results and the next tournaments near you.</p>
+      <p class="about-tagline">Your whole team on one screen: every player's published and live ratings, how they're trending, and their latest results.</p>
       <ol class="welcome-steps">
         <li><strong>Create a group</strong> in the left column, like "Tuesday club" or "Grades 3–5".</li>
-        <li><strong>Add players</strong> by name, or paste a list of US Chess member IDs.</li>
+        <li><strong>Add players</strong> by name or US Chess member ID.</li>
         <li><strong>Share or back up</strong> a group with a link or an export file. No account needed.</li>
       </ol>
     </section>`
@@ -158,55 +185,74 @@ function renderImport(query: string) {
         <div class="about-cta"><button class="button prominent big" type="button" data-action="accept-import">Add this group</button><a class="button big" href="/coach/">Cancel</a></div>
       </section>`
     : emptyState('⚠', 'This link has no players', 'Ask for a new share link.')
-  main.onclick = (e) => {
-    if (!shared || !(e.target as HTMLElement).closest('[data-action="accept-import"]')) return
-    const group = groups.create(shared.name, shared.memberIDs)
-    location.hash = `#/group/${group.id}`
-  }
 }
+
+// MARK: - Group view
 
 function renderGroup() {
   const group = currentGroup()!
+  const count = `${group.memberIDs.length} ${group.memberIDs.length === 1 ? 'player' : 'players'}`
   main.innerHTML = `
     <header class="group-head">
-      <input class="group-name" type="text" value="${esc(group.name)}" aria-label="Group name" maxlength="80" data-action="rename">
-      <span class="muted">${group.memberIDs.length} ${group.memberIDs.length === 1 ? 'player' : 'players'}</span>
+      ${
+        renaming
+          ? `<form class="rename-form" data-form="rename">
+              <input class="group-name editing" name="name" type="text" value="${esc(group.name)}" aria-label="Group name" maxlength="80" required>
+              <button class="button prominent" type="submit">Save</button>
+              <button class="button" type="button" data-action="cancel-rename">Cancel</button>
+            </form>`
+          : `<h1 class="group-title">${esc(group.name)}</h1>
+             <button class="button icon-label" type="button" data-action="rename">✎ Rename</button>`
+      }
+      <span class="muted">${count}</span>
       <span class="spacer"></span>
-      <button class="button" type="button" data-action="toggle-add" aria-expanded="${addOpen}">＋ Add players</button>
+      <button class="button${addOpen ? ' active-toggle' : ''}" type="button" data-action="toggle-add" aria-expanded="${addOpen}">＋ Add players</button>
       <button class="button" type="button" data-action="refresh" ${group.memberIDs.length ? '' : 'disabled'}>↻ Refresh</button>
       <button class="button" type="button" data-action="share-roster" ${group.memberIDs.length ? '' : 'disabled'}>Share roster</button>
       <button class="button danger" type="button" data-action="delete-group">Delete</button>
     </header>
     ${message ? `<div class="card banner" role="status">${message}</div>` : ''}
     ${addOpen ? addPanel() : ''}
+    <div class="coach-controls">
+      ${controlChip('rating', 'Rating', ratingTypes[ratingType], Object.entries(ratingTypes), ratingType)}
+      ${controlChip('period', 'Period', periodLabel(), Object.entries(periods).map(([k, v]) => [k, v]), String(period))}
+      ${ratingType === 'blitz' ? '<span class="muted small">US Chess publishes Blitz ratings without per-tournament changes, so changes and the chart cover Regular and Quick.</span>' : ''}
+    </div>
     <div class="group-content"></div>`
   renderGroupContent()
-  if (addOpen) main.querySelector<HTMLInputElement>('input[name=search]')?.focus()
+  if (renaming) main.querySelector<HTMLInputElement>('.group-name')?.select()
+  else if (addOpen) main.querySelector<HTMLInputElement>('input[name=search]')?.focus()
+}
+
+function controlChip(key: string, label: string, title: string, options: [string, string][], value: string): string {
+  return `<label class="chip control-chip">
+    <span class="control-label">${label}</span><span class="chip-text">${esc(title)}</span><span aria-hidden="true">▾</span>
+    <select data-control="${key}" aria-label="${label}">
+      ${options.map(([k, v]) => `<option value="${esc(k)}"${k === value ? ' selected' : ''}>${esc(v)}</option>`).join('')}
+    </select>
+  </label>`
 }
 
 function addPanel(): string {
   return `<section class="card add-panel">
-    <div class="add-search">
-      <h2 class="section-label">Find a player</h2>
-      <input name="search" type="search" placeholder="Name or 8-digit member ID" autocomplete="off" data-action="search" value="${esc(searchQuery)}">
-      <div class="search-results-list">${searchResultsHTML()}</div>
+    <div class="add-head">
+      <h2 class="section-label">Add players</h2>
+      <button class="button prominent" type="button" data-action="toggle-add">Done</button>
     </div>
-    <form class="add-paste" data-form="paste">
-      <h2 class="section-label">Or paste member IDs</h2>
-      <textarea name="ids" rows="5" placeholder="12345678, 23456789…&#10;A column copied from a spreadsheet works too."></textarea>
-      <button class="button prominent" type="submit">Add these players</button>
-    </form>
+    <input name="search" type="search" placeholder="Search by name or 8-digit member ID" autocomplete="off" data-action="search" value="${esc(searchQuery)}">
+    <div class="search-results-list">${searchResultsHTML()}</div>
   </section>`
 }
 
 function searchResultsHTML(): string {
   const group = currentGroup()
+  if (!searchResults.length) return searchQuery.trim().length >= 2 ? '<p class="muted small">No players found.</p>' : ''
   return searchResults
     .map(
       (p) => `<div class="search-hit">
         <span class="player-text"><span class="player-name"><strong>${esc(p.name)}</strong>${stateChip(p.state)}</span><small class="mono">ID ${esc(p.id)}</small></span>
         ${clockDigits(p.regular, { size: 'sm' })}
-        ${group?.memberIDs.includes(p.id) ? '<span class="muted small">Added</span>' : `<button class="button" type="button" data-add="${esc(p.id)}">Add</button>`}
+        ${group?.memberIDs.includes(p.id) ? '<span class="added-label">✓ Added</span>' : `<button class="button" type="button" data-add="${esc(p.id)}">Add</button>`}
       </div>`,
     )
     .join('')
@@ -216,52 +262,66 @@ function renderGroupContent() {
   const group = currentGroup()
   const host = main.querySelector<HTMLElement>('.group-content')
   if (!group || !host) return
+  disposeChart?.()
+  disposeChart = undefined
   if (!group.memberIDs.length) {
     host.innerHTML = emptyState('♟', 'No players yet', 'Use “Add players” to add your kids by name or member ID.')
     return
   }
   load(group.memberIDs)
 
-  const loaded = group.memberIDs.map((id) => players.get(id))
-  const ready = loaded.filter((p): p is Player => !!p && !(p instanceof Error))
-  const rows = ready.map((p) => playerRow(p))
+  const ready = group.memberIDs.map(loadedPlayer).filter((p): p is Player => !!p)
+  const rows = ready.map((p) => playerRow(p, ratingType, period))
   const summary = groupSummary(rows)
-  const pending = group.memberIDs.length - loaded.filter(Boolean).length
+  const pending = group.memberIDs.filter((id) => !players.has(id)).length
   const onTop100 = ready.filter((p) => ranksFor(p.id).length).length
+  const chartType = ratingType === 'blitz' ? 'regular' : ratingType
 
   host.innerHTML = `
     <div class="tiles">
-      ${tile('Average rating', summary.averageRegular != null ? String(summary.averageRegular) : '–', 'Regular, rated players')}
-      ${tile('Last 90 days', summary.recentChange ? `${summary.recentChange > 0 ? '+' : ''}${num(summary.recentChange)}` : '0', 'Regular points, whole group', summary.recentChange > 0 ? 'up' : summary.recentChange < 0 ? 'down' : '')}
-      ${tile('Events played', num(summary.recentEvents), 'in the last 90 days')}
+      ${tile('Average live rating', summary.averageLive != null ? String(summary.averageLive) : '–', `${ratingTypes[ratingType]}, rated players`)}
+      ${tile(`Change · ${periodLabel()}`, ratingType === 'blitz' ? '–' : summary.periodChange ? signed(summary.periodChange) : '0', `${ratingTypes[ratingType]} points, whole group`, summary.periodChange > 0 ? 'up' : summary.periodChange < 0 ? 'down' : '')}
+      ${tile(`Events · ${periodLabel()}`, num(summary.periodEvents), `${ratingTypes[ratingType]}-rated tournaments`)}
       ${tile('On a Top 100 list', String(onTop100), 'US Chess, this month')}
     </div>
     ${pending ? `<p class="muted small loading-line"><span class="spinner" aria-hidden="true"></span> Loading ${pending} of ${group.memberIDs.length} players…</p>` : ''}
+    <section class="card chart-card-wide">
+      <div class="chart-head">
+        <h2 class="section-label">${ratingTypes[chartType]} rating · ${periodLabel()}</h2>
+        <span class="muted small">Each dot is a tournament. Click a dot for the player, click a name to hide or show them.</span>
+      </div>
+      <div class="group-legend"></div>
+      <div class="group-chart"></div>
+    </section>
     <div class="coach-grid">
       <section class="card roster-card">${rosterTable(group, rows)}</section>
-      <aside class="coach-side">
-        <section class="card side-card">${resultsHTML(ready)}</section>
-        <section class="card side-card upcoming-card">${upcomingHTML()}</section>
-      </aside>
+      <aside class="coach-side"><section class="card side-card">${resultsHTML(ready)}</section></aside>
     </div>`
+
+  disposeChart = renderGroupChart(
+    host.querySelector<HTMLElement>('.group-chart')!,
+    host.querySelector<HTMLElement>('.group-legend')!,
+    chartSeries(ready, chartType, period),
+    (id, anchor) => openPlayerCard(id, anchor),
+  )
 }
 
 function tile(title: string, value: string, caption: string, tint = ''): string {
   return `<div class="card coach-tile"><span class="tile-title">${esc(title)}</span><span class="tile-value ${tint}">${esc(value)}</span><span class="tile-caption">${esc(caption)}</span></div>`
 }
 
-const columns: { key: SortKey; label: string; numeric?: boolean }[] = [
-  { key: 'name', label: 'Player' },
-  { key: 'regular', label: 'Regular', numeric: true },
-  { key: 'quick', label: 'Quick', numeric: true },
-  { key: 'blitz', label: 'Blitz', numeric: true },
-  { key: 'lastChange', label: 'Last event', numeric: true },
-  { key: 'recentChange', label: '90 days', numeric: true },
-  { key: 'recentEvents', label: 'Events (90d)', numeric: true },
-  { key: 'lastRated', label: 'Last rated', numeric: true },
-]
+const playerButton = (id: string, name: string) => `<button class="player-link" type="button" data-player="${esc(id)}">${esc(name)}</button>`
 
 function rosterTable(group: Group, rows: PlayerRow[]): string {
+  const columns: { key: SortKey; label: string; numeric?: boolean; title?: string }[] = [
+    { key: 'name', label: 'Player' },
+    { key: 'published', label: 'Published', numeric: true, title: 'The official rating from the latest monthly supplement' },
+    { key: 'live', label: 'Live', numeric: true, title: 'Includes tournaments rated since the monthly supplement' },
+    { key: 'lastChange', label: 'Last event', numeric: true },
+    { key: 'periodChange', label: periodLabel(), numeric: true, title: `Net change over ${periodLabel()}` },
+    { key: 'periodEvents', label: 'Events', numeric: true, title: `Tournaments in ${periodLabel()}` },
+    { key: 'lastRated', label: 'Last rated', numeric: true },
+  ]
   const sorted = sortRows(rows, sort.key, sort.descending)
   const failed = group.memberIDs.filter((id) => players.get(id) instanceof Error)
   const waiting = group.memberIDs.filter((id) => !players.has(id))
@@ -272,31 +332,31 @@ function rosterTable(group: Group, rows: PlayerRow[]): string {
         .map((c) => {
           const active = sort.key === c.key
           const aria = active ? (sort.descending ? 'descending' : 'ascending') : 'none'
-          return `<th class="${c.numeric ? 'num' : ''}" aria-sort="${aria}"><button type="button" data-sort="${c.key}">${c.label}${active ? (sort.descending ? ' ▼' : ' ▲') : ''}</button></th>`
+          return `<th class="${c.numeric ? 'num' : ''}" aria-sort="${aria}"${c.title ? ` title="${esc(c.title)}"` : ''}><button type="button" data-sort="${c.key}">${esc(c.label)}${active ? (sort.descending ? ' ▼' : ' ▲') : ''}</button></th>`
         })
         .join('')}
       <th><span class="sr-only">Remove</span></th>
     </tr></thead>
     <tbody>
       ${sorted
-        .map(
-          (r) => `<tr>
-            <td class="player-cell"><a href="/#/player/${esc(r.id)}" target="_blank" rel="noopener"><strong>${esc(r.name)}</strong></a> ${stateChip(r.state)} ${badgeSlot(r.id, 'compact')}<small class="mono">ID ${esc(r.id)}</small></td>
-            <td class="num mono">${r.regular ?? '–'}</td>
-            <td class="num mono">${r.quick ?? '–'}</td>
-            <td class="num mono">${r.blitz ?? '–'}</td>
+        .map((r) => {
+          const pendingSupplement = r.live != null && r.published != null && r.live !== r.published
+          return `<tr>
+            <td class="player-cell">${playerButton(r.id, r.name)} ${stateChip(r.state)} ${badgeSlot(r.id, 'compact')}<small class="mono">ID ${esc(r.id)}</small></td>
+            <td class="num mono">${r.published ?? '–'}</td>
+            <td class="num mono${pendingSupplement ? ' live-new' : ''}"${pendingSupplement ? ' title="New since the monthly supplement"' : ''}>${r.live ?? '–'}</td>
             <td class="num">${change(r.lastChange)}</td>
-            <td class="num">${r.recentEvents ? change(r.recentChange) : '<span class="muted">–</span>'}</td>
-            <td class="num mono">${r.recentEvents}</td>
-            <td class="num muted">${r.lastRated ? daysAgo(r.lastRated) : 'never'}</td>
+            <td class="num">${r.periodEvents ? change(r.periodChange) : '<span class="muted">–</span>'}</td>
+            <td class="num mono">${r.periodEvents}</td>
+            <td class="num muted">${lastRatedText(r.lastRated)}</td>
             <td><button class="icon-button small" type="button" data-remove="${esc(r.id)}" aria-label="Remove ${esc(r.name)} from the group">✕</button></td>
-          </tr>`,
-        )
+          </tr>`
+        })
         .join('')}
-      ${waiting.map((id) => `<tr class="pending-row"><td class="player-cell"><span class="muted">Loading ID ${esc(id)}…</span></td><td colspan="8"></td></tr>`).join('')}
+      ${waiting.map((id) => `<tr class="pending-row"><td class="player-cell"><span class="muted">Loading ID ${esc(id)}…</span></td><td colspan="7"></td></tr>`).join('')}
       ${failed
         .map(
-          (id) => `<tr class="pending-row"><td class="player-cell"><span class="text-down">Couldn't load ID ${esc(id)}</span></td><td colspan="7"></td>
+          (id) => `<tr class="pending-row"><td class="player-cell"><span class="text-down">Couldn't load ID ${esc(id)}</span></td><td colspan="6"></td>
             <td><button class="icon-button small" type="button" data-remove="${esc(id)}" aria-label="Remove ID ${esc(id)}">✕</button></td></tr>`,
         )
         .join('')}
@@ -305,75 +365,105 @@ function rosterTable(group: Group, rows: PlayerRow[]): string {
 }
 
 function resultsHTML(ready: Player[]): string {
-  const results = recentResults(ready)
-  return `<h2 class="section-label">Recent results</h2>
-    ${
-      results.length
-        ? `<div class="result-list">${results
-            .map(
-              (r) => `<a class="result-item" href="/#/event/${esc(r.eventID)}${r.section != null ? `?section=${r.section}` : ''}" target="_blank" rel="noopener">
-                <span class="result-head"><strong>${esc(r.name)}</strong><small class="muted">${eventDate(r.date)}</small></span>
-                <span class="result-players">${r.players
-                  .map((p) => `<span>${esc(p.name.split(' ')[0])}${p.pre != null && p.post != null ? ` ${deltaBadge(p.post - p.pre)}` : ''}</span>`)
-                  .join('')}</span>
-              </a>`,
-            )
-            .join('')}</div>`
-        : '<p class="muted small">No rated events in the last 60 days.</p>'
-    }`
-}
-
-// MARK: - Upcoming tournaments near the coach
-
-let upcoming: { origin: string; request: Promise<TournamentListing[]> } | undefined
-
-function coachLocation(): string | undefined {
-  try {
-    return localStorage.getItem('coach.location') ?? prefs.location?.origin ?? undefined
-  } catch {
-    return prefs.location?.origin
-  }
-}
-
-function upcomingHTML(): string {
-  const origin = coachLocation()
-  const form = `<form class="location-inline" data-form="location">
-      <input name="origin" type="text" placeholder="City or ZIP" value="${esc(origin ?? '')}" aria-label="City or ZIP for upcoming tournaments">
-      <button class="button" type="submit">Set</button>
-    </form>`
-  if (!origin) return `<h2 class="section-label">Upcoming near you</h2>${form}<p class="muted small">Enter your school's city or ZIP to see tournaments within 50 miles.</p>`
-  if (upcoming?.origin !== origin) {
-    upcoming = { origin, request: fetchUpcoming(origin, 50) }
-    upcoming.request.then(redrawSoon, redrawSoon)
-  }
-  let list = '<p class="muted small">Loading tournaments…</p>'
-  const settled = settledValue(upcoming.request)
-  if (settled instanceof Error) list = '<p class="muted small">Couldn\'t load tournaments right now.</p>'
-  else if (settled) {
-    const next = settled.filter((l) => !l.isRecurring).slice(0, 6)
-    list = next.length
-      ? `<div class="result-list">${next
+  const toggle = `<div class="segmented small-seg" role="radiogroup" aria-label="Group results">
+    <button type="button" role="radio" aria-checked="${resultsMode === 'event'}" data-results="event">By event</button>
+    <button type="button" role="radio" aria-checked="${resultsMode === 'player'}" data-results="player">By player</button>
+  </div>`
+  const crosstable = (eventID?: string, section?: number) => (eventID ? `/#/event/${esc(eventID)}${section != null ? `?section=${section}` : ''}` : undefined)
+  const change = (pre?: number, post?: number) => (pre != null && post != null ? deltaBadge(post - pre) : '')
+  let body: string
+  if (resultsMode === 'event') {
+    const results = resultsByEvent(ready, ratingType, period)
+    body = results.length
+      ? `<div class="result-list">${results
           .map(
-            (l) => `<a class="result-item" href="/#/tournament${esc(l.id)}" target="_blank" rel="noopener">
-              <span class="result-head"><strong>${esc(l.name)}</strong></span>
-              <small class="muted">${l.startDate ? eventDate(l.startDate) : ''}${l.location ? ` · ${esc(l.location)}` : ''}</small>
-            </a>`,
+            (r) => `<div class="result-item">
+              <a class="result-head" href="${crosstable(r.eventID, r.section)}" target="_blank" rel="noopener"><strong>${esc(r.name)}</strong><small class="muted">${eventDate(r.date)}</small></a>
+              <span class="result-players">${r.players.map((p) => `<span>${playerButton(p.id, p.name.split(' ')[0])}${change(p.pre, p.post)}</span>`).join('')}</span>
+            </div>`,
           )
           .join('')}</div>`
-      : '<p class="muted small">No tournaments within 50 miles right now.</p>'
+      : `<p class="muted small">No rated events in ${periodLabel()}.</p>`
+  } else {
+    const byPlayer = resultsByPlayer(ready, ratingType, period)
+    body = byPlayer.length
+      ? `<div class="result-list">${byPlayer
+          .map(
+            (p) => `<div class="result-item">
+              <span class="result-head">${playerButton(p.id, p.name)}</span>
+              ${p.events
+                .map((e) => {
+                  const href = crosstable(e.eventID, e.section)
+                  const label = `<span class="player-event-name">${esc(e.name)}</span><small class="muted">${eventDate(e.date)}</small>${change(e.pre, e.post)}`
+                  return href ? `<a class="player-event" href="${href}" target="_blank" rel="noopener">${label}</a>` : `<span class="player-event">${label}</span>`
+                })
+                .join('')}
+            </div>`,
+          )
+          .join('')}</div>`
+      : `<p class="muted small">No rated events in ${periodLabel()}.</p>`
   }
-  return `<h2 class="section-label">Upcoming near ${esc(origin)}</h2>${form}${list}`
+  return `<div class="side-head"><h2 class="section-label">Recent results</h2>${toggle}</div>${body}`
 }
 
-/** A promise's value once settled (or the Error it failed with), else undefined. */
-const settled = new WeakMap<Promise<unknown>, unknown>()
-function settledValue<T>(p: Promise<T>): T | Error | undefined {
-  if (!settled.has(p)) {
-    settled.set(p, undefined)
-    p.then((v) => settled.set(p, v), (e) => settled.set(p, e instanceof Error ? e : new Error(String(e))))
-  }
-  return settled.get(p) as T | Error | undefined
+// MARK: - Player card (tap a name or a chart dot)
+
+function closePlayerCard() {
+  document.querySelector('.player-card')?.remove()
 }
+
+function openPlayerCard(id: string, anchor: HTMLElement) {
+  closePlayerCard()
+  const p = loadedPlayer(id)
+  if (!p) return
+  const rows = (['regular', 'quick', 'blitz'] as RatingType[]).map((t) => ({ t, row: playerRow(p, t, period) }))
+  const last = p.events[0]
+  const lastResult = last ? (resultOf(last, ratingType) ?? last.regular ?? last.quick) : undefined
+  const card = document.createElement('div')
+  card.className = 'card player-card'
+  card.setAttribute('role', 'dialog')
+  card.setAttribute('aria-label', `${p.name} quick view`)
+  card.innerHTML = `
+    <div class="pc-head">
+      <div><strong class="pc-name">${esc(p.name)}</strong> ${stateChip(p.state)}<small class="mono muted">ID ${esc(p.id)}</small></div>
+      <button class="icon-button small" type="button" data-action="close-card" aria-label="Close">✕</button>
+    </div>
+    ${badgeSlot(p.id, 'all')}
+    <table class="pc-ratings">
+      <thead><tr><th></th><th>Published</th><th>Live</th><th>${esc(periodLabel())}</th></tr></thead>
+      <tbody>${rows
+        .map(
+          ({ t, row }) => `<tr><th>${ratingTypes[t]}</th><td class="mono">${row.published ?? '–'}</td><td class="mono${row.live != null && row.live !== row.published ? ' live-new' : ''}">${row.live ?? '–'}</td>
+            <td>${row.periodEvents && row.periodChange != null ? deltaBadge(row.periodChange) : '<span class="muted">–</span>'}</td></tr>`,
+        )
+        .join('')}</tbody>
+    </table>
+    ${
+      last
+        ? `<div class="pc-last"><span class="muted small">Last event</span><strong>${esc(last.name)}</strong>
+            <span class="small muted">${eventDate(last.date)}${lastResult?.pre != null && lastResult.post != null ? ` · ${lastResult.pre} → ${lastResult.post}` : ''}</span></div>`
+        : '<p class="muted small">No rated events yet.</p>'
+    }
+    <div class="pc-actions">
+      <a class="button prominent" href="/#/player/${esc(p.id)}" target="_blank" rel="noopener">View full profile ↗</a>
+      <a class="button" href="/#/player/${esc(p.id)}/history?system=${ratingType === 'quick' ? 'quick' : 'regular'}" target="_blank" rel="noopener">Rating history ↗</a>
+    </div>`
+  document.body.append(card)
+
+  // Next to the name (or the chart), kept on screen.
+  const rect = anchor.getBoundingClientRect()
+  const width = card.offsetWidth
+  const left = Math.min(Math.max(8, rect.left), window.innerWidth - width - 8)
+  const below = rect.bottom + 8
+  const top = below + card.offsetHeight > window.innerHeight - 8 ? Math.max(8, rect.top - card.offsetHeight - 8) : below
+  card.style.left = `${left + window.scrollX}px`
+  card.style.top = `${top + window.scrollY}px`
+  card.querySelector<HTMLElement>('a.button')?.focus()
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closePlayerCard()
+})
 
 // MARK: - Events
 
@@ -388,10 +478,25 @@ document.addEventListener('click', async (e) => {
   const target = e.target as HTMLElement
   const group = currentGroup()
 
+  // Player card: open on a name, close on anything outside it.
+  const playerLink = target.closest<HTMLElement>('[data-player]')
+  if (playerLink) {
+    openPlayerCard(playerLink.dataset.player!, playerLink)
+    return
+  }
+  if (target.closest('[data-action="close-card"]') || !target.closest('.player-card, .group-chart')) closePlayerCard()
+
   const sortButton = target.closest<HTMLElement>('[data-sort]')
   if (sortButton) {
     const key = sortButton.dataset.sort as SortKey
     sort = sort.key === key ? { key, descending: !sort.descending } : { key, descending: key !== 'name' }
+    renderGroupContent()
+    return
+  }
+  const resultsButton = target.closest<HTMLElement>('[data-results]')
+  if (resultsButton) {
+    resultsMode = resultsButton.dataset.results as 'event' | 'player'
+    saveSetting('coach.results', resultsMode)
     renderGroupContent()
     return
   }
@@ -411,8 +516,25 @@ document.addEventListener('click', async (e) => {
   }
 
   switch (target.closest<HTMLElement>('[data-action]')?.dataset.action) {
+    case 'accept-import': {
+      const shared = parseShareRoster(location.hash.split('?')[1] ?? '')
+      if (shared) location.hash = `#/group/${groups.create(shared.name, shared.memberIDs).id}`
+      break
+    }
     case 'toggle-add':
       addOpen = !addOpen
+      if (!addOpen) {
+        searchQuery = ''
+        searchResults = []
+      }
+      renderGroup()
+      break
+    case 'rename':
+      renaming = true
+      renderGroup()
+      break
+    case 'cancel-rename':
+      renaming = false
       renderGroup()
       break
     case 'refresh':
@@ -449,23 +571,27 @@ document.addEventListener('click', async (e) => {
 })
 
 document.addEventListener('change', async (e) => {
-  const target = e.target as HTMLInputElement
-  const group = currentGroup()
-  if (target.dataset.action === 'rename' && group) {
-    groups.update(group.id, { name: target.value.trim() || group.name })
-    renderSidebar()
-  } else if (target.dataset.action === 'import-file' && target.files?.[0]) {
+  const target = e.target as HTMLInputElement | HTMLSelectElement
+  if (target.dataset.control === 'rating') {
+    ratingType = target.value as RatingType
+    saveSetting('coach.rating', ratingType)
+    renderGroup()
+  } else if (target.dataset.control === 'period') {
+    period = Number(target.value) as PeriodDays
+    saveSetting('coach.period', String(period))
+    renderGroup()
+  } else if (target.dataset.action === 'import-file' && (target as HTMLInputElement).files?.[0]) {
+    const input = target as HTMLInputElement
     try {
-      const imported = parseExportFile(await target.files[0].text())
+      const imported = parseExportFile(await input.files![0].text())
       for (const g of imported) groups.create(g.name, g.memberIDs)
       message = `Imported ${imported.length} ${imported.length === 1 ? 'group' : 'groups'}.`
-      renderSidebar()
       route()
       message = ''
     } catch (error) {
       alert((error as Error).message)
     }
-    target.value = ''
+    input.value = ''
   }
 })
 
@@ -487,27 +613,18 @@ document.addEventListener('submit', (e) => {
   const kind = form.dataset.form
   if (!kind) return
   e.preventDefault()
-  const field = (name: string) => (form.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement).value
+  const field = (name: string) => (form.elements.namedItem(name) as HTMLInputElement).value
   if (kind === 'new-group') {
     const group = groups.create(field('name'))
     addOpen = true
     location.hash = `#/group/${group.id}`
-  } else if (kind === 'paste') {
+  } else if (kind === 'rename') {
     const group = currentGroup()
-    const ids = parseMemberIDs(field('ids'))
-    if (group && ids.length) {
-      groups.addMembers(group.id, ids)
-      message = `Added ${ids.length} ${ids.length === 1 ? 'player' : 'players'}.`
-      renderSidebar()
-      renderGroup()
-      message = ''
-    }
-  } else if (kind === 'location') {
-    const origin = field('origin').trim()
-    try {
-      if (origin) localStorage.setItem('coach.location', origin)
-    } catch {}
-    renderGroupContent()
+    const name = field('name').trim()
+    if (group && name) groups.update(group.id, { name })
+    renaming = false
+    renderSidebar()
+    renderGroup()
   }
 })
 
@@ -524,7 +641,9 @@ function route() {
       groupID = first.id
     }
   }
-  main.onclick = null
+  disposeChart?.()
+  disposeChart = undefined
+  closePlayerCard()
   renderSidebar()
   if (path.startsWith('/import')) renderImport(query)
   else if (groupID) renderGroup()
@@ -533,10 +652,12 @@ function route() {
 
 window.addEventListener('hashchange', () => {
   addOpen = false
-  searchResults = []
+  renaming = false
   searchQuery = ''
+  searchResults = []
+  resetChart()
   route()
 })
-startBadges(main)
+startBadges(document.body)
 topListsReady().then(redrawSoon)
 route()

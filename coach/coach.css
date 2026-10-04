@@ -49,7 +49,7 @@ body.coach main {
 .group-link-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .group-count { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--text-3); }
 .new-group { display: flex; gap: 6px; }
-.new-group input, .location-inline input, .add-search input, .add-paste textarea, .group-name {
+.new-group input, .group-name {
   flex: 1;
   min-width: 0;
   padding: 8px 10px;
@@ -59,7 +59,7 @@ body.coach main {
   font-size: 14px;
   outline: none;
 }
-.new-group input:focus, .location-inline input:focus, .add-search input:focus, .add-paste textarea:focus, .group-name:focus { border-color: var(--gold); }
+.new-group input:focus, .group-name:focus { border-color: var(--gold); }
 .sidebar-tools { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: auto; padding: 12px 4px 0; border-top: 1px solid var(--hairline); }
 .sidebar-tools .link-button:disabled { color: var(--text-3); cursor: default; }
 .file-button { cursor: pointer; }
@@ -72,14 +72,17 @@ body.coach main {
 .import-card h1 { font-size: 24px; }
 
 .group-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.group-name { flex: 0 1 360px; font-size: 24px; font-weight: 800; padding: 6px 10px; border-color: transparent; background: transparent; }
-.group-name:hover { border-color: var(--hairline); }
+.group-title { font-size: 26px; font-weight: 800; letter-spacing: -0.01em; margin-right: 2px; }
+.rename-form { display: flex; align-items: center; gap: 8px; }
+.group-name.editing { width: 340px; font-size: 20px; font-weight: 700; padding: 6px 10px; }
+.button.active-toggle { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 50%, transparent); }
 
-.add-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 18px; }
-.add-search, .add-paste { display: flex; flex-direction: column; gap: 10px; }
-.add-search .section-label, .add-paste .section-label { margin: 0; }
-.add-paste textarea { resize: vertical; font-family: var(--mono); }
-.add-paste .button { align-self: flex-start; }
+.add-panel { display: flex; flex-direction: column; gap: 12px; padding: 18px; border-color: color-mix(in srgb, var(--gold) 35%, var(--hairline)); }
+.add-head { display: flex; align-items: center; justify-content: space-between; }
+.add-head .section-label { margin: 0; }
+.add-panel input[name=search] { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--hairline); background: var(--bg); font-size: 15px; outline: none; }
+.add-panel input[name=search]:focus { border-color: var(--gold); }
+.added-label { font-size: 13px; font-weight: 600; color: var(--up); white-space: nowrap; }
 .search-results-list { display: flex; flex-direction: column; max-height: 260px; overflow-y: auto; }
 .search-hit { display: flex; align-items: center; gap: 12px; padding: 8px 4px; border-top: 1px solid var(--hairline); }
 .search-hit:first-child { border-top: 0; }
@@ -124,7 +127,6 @@ body.coach main {
 .result-head small { white-space: nowrap; }
 .result-players { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--text-2); }
 .result-players span { display: inline-flex; align-items: center; gap: 4px; }
-.location-inline { display: flex; gap: 6px; }
 
 /* Smaller screens: it still works, but it's made for a computer. */
 @media (max-width: 1100px) {
@@ -135,7 +137,119 @@ body.coach main {
   .coach-layout { grid-template-columns: minmax(0, 1fr); }
   .coach-sidebar { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--hairline); }
   .sidebar-tools { margin-top: 0; }
-  .add-panel { grid-template-columns: minmax(0, 1fr); }
-  body.coach main { padding: 16px; }
+    body.coach main { padding: 16px; }
   body.coach main::before { content: 'OpenBoard for Coaches is made for a computer. It works here too.'; font-size: 13px; color: var(--text-2); padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--gold) 10%, transparent); }
 }
+
+/* MARK: Controls */
+
+.coach-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.control-chip { gap: 8px; padding: 8px 14px; color: var(--text); }
+.control-label { font-size: 12px; font-weight: 600; color: var(--text-2); }
+
+/* MARK: Player names and card */
+
+.player-link { padding: 0; border: 0; background: none; font: inherit; font-weight: 700; color: var(--text); cursor: pointer; text-align: left; }
+.player-link:hover { color: var(--gold); text-decoration: underline; text-underline-offset: 3px; }
+.result-players .player-link { font-weight: 600; color: var(--text-2); }
+.live-new { color: var(--gold); font-weight: 700; }
+
+.player-card {
+  position: absolute;
+  z-index: 50;
+  width: 340px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+.pc-head { display: flex; justify-content: space-between; gap: 8px; }
+.pc-name { font-size: 17px; }
+.pc-head small { display: block; font-size: 11px; margin-top: 2px; }
+.pc-ratings { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pc-ratings th, .pc-ratings td { padding: 6px 4px; text-align: right; border-top: 1px solid var(--hairline); }
+.pc-ratings thead th { border-top: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-3); }
+.pc-ratings tbody th { text-align: left; font-weight: 600; color: var(--text-2); }
+.pc-last { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+.pc-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.pc-actions .button { flex: 1; font-size: 13px; padding: 8px 10px; }
+
+/* MARK: Results */
+
+.side-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.side-head .section-label { margin: 0; }
+.segmented.small-seg { padding: 2px; border-radius: 9px; }
+.segmented.small-seg button { padding: 4px 10px; font-size: 12px; border-radius: 7px; white-space: nowrap; }
+a.result-head:hover strong { color: var(--gold); }
+.player-event { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 2px 0; }
+.player-event-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+a.player-event:hover .player-event-name { color: var(--gold); }
+
+/* MARK: Group chart (categorical slots from the validated reference palette) */
+
+body.coach {
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
+  --series-5: #e87ba4; --series-6: #008300; --series-7: #4a3aa7; --series-8: #e34948;
+  --series-other: #9aa3b2;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) body.coach {
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+    --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+    --series-other: #5b6575;
+  }
+}
+:root[data-theme='dark'] body.coach {
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+  --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+  --series-other: #5b6575;
+}
+
+.chart-card-wide { padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.chart-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.chart-head .section-label { margin: 0; }
+.group-legend { display: flex; flex-wrap: wrap; gap: 6px; }
+.legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: var(--card);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+.legend-chip i { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.legend-chip.off { color: var(--text-3); }
+.legend-chip.off i { background: transparent !important; box-shadow: inset 0 0 0 1.5px var(--text-3); }
+.legend-chip:disabled { opacity: 0.45; cursor: default; }
+.group-chart { position: relative; height: 360px; cursor: crosshair; }
+.group-chart svg { display: block; overflow: visible; }
+.group-chart .grid { stroke: var(--hairline); stroke-width: 1; }
+.group-chart .axis { fill: var(--text-3); font-size: 11px; font-variant-numeric: tabular-nums; }
+.group-chart .series polyline { fill: none; stroke: var(--c); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.group-chart .series circle { fill: var(--c); stroke: var(--card); stroke-width: 2; }
+.group-chart .series.dim { opacity: 0.18; }
+.group-chart .series.emph polyline { stroke-width: 3; }
+.chart-empty { display: grid; place-items: center; height: 100%; margin: 0; }
+.group-tip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 14px));
+  min-width: 180px;
+  max-width: 260px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--card);
+  border: 1px solid var(--hairline);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  pointer-events: none;
+}
+.group-tip strong { font-size: 13px; }
