@@ -50,6 +50,9 @@ function load(): Promise<void> {
   return loading
 }
 
+/** Resolves once the index is loaded (or failed), so counts can use `ranksFor`. */
+export const topListsReady = () => load()
+
 /** "🏅 #37 · Age 9" */
 export function topRankBadge(rank: TopListRank, compact = false): string {
   const label = badgeLabel(rank.definition)

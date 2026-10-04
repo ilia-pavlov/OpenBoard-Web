@@ -68,5 +68,6 @@ export const aboutView: View = ({ root }) => {
       <p>Also on iPhone and iPad: <a href="https://github.com/ilia-pavlov/OpenBoard" target="_blank" rel="noopener">OpenBoard for iOS</a>.</p>
       ${supportLink()}
       <p class="muted">Not affiliated with or endorsed by the US Chess Federation. Want to play rated games? <a href="https://www.uschess.org/join" target="_blank" rel="noopener">Join US Chess</a>.</p>
+      <p class="coach-invite">If you're a school or a coach, try <a href="/coach/">OpenBoard for Coaches</a>. You'll like it.</p>
     </section>`
 }

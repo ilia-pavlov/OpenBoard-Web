@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0B0E13" />
+    <meta name="description" content="OpenBoard for Coaches: follow your whole team's US Chess ratings, results and upcoming tournaments on one screen." />
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon-dark.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon-light.png" media="(prefers-color-scheme: light)" />
+    <title>OpenBoard for Coaches</title>
+    <meta property="og:site_name" content="OpenBoard" />
+    <meta property="og:title" content="OpenBoard for Coaches" />
+    <meta property="og:description" content="Follow your whole team's US Chess ratings, results and upcoming tournaments on one screen." />
+    <meta property="og:image" content="https://openboard.online/icon-512.png" />
+    <script src="/theme.js"></script>
+  </head>
+  <body class="coach">
+    <header class="coach-bar">
+      <a class="coach-brand" href="/coach/"><span class="brand-mark">♛</span> OpenBoard <span class="coach-badge">for Coaches</span></a>
+      <span class="spacer"></span>
+      <a class="link-button" href="/" target="_blank" rel="noopener">Family app ↗</a>
+      <button class="appearance" type="button" aria-label="Appearance"></button>
+    </header>
+    <div class="coach-layout">
+      <nav class="coach-sidebar" aria-label="Groups"></nav>
+      <main id="coach" tabindex="-1"></main>
+    </div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

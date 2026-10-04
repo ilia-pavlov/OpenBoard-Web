@@ -6,6 +6,12 @@ import { defineConfig } from 'vite'
 const userAgent = 'OpenBoard-Web/0.1'
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      // Two apps from one codebase: the family app and the coach dashboard (/coach/).
+      input: { main: 'index.html', coach: 'coach/index.html' },
+    },
+  },
   server: {
     proxy: {
       '/api/ratings': {

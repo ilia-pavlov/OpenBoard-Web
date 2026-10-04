@@ -1,93 +1,7 @@
-/* OpenBoard palette — dark-first, matching the iOS app's Theme.swift. */
-:root {
-  --bg: #f2f4f8;
-  --card: #ffffff;
-  --hairline: #d9dee7;
-  --glass: rgba(255, 255, 255, 0.72);
-  --glass-edge: rgba(11, 14, 19, 0.08);
-  --text: #0b0e13;
-  --text-2: #5b6575;
-  --text-3: #8a93a0;
-  --gold: #b8860b;
-  --teal: #18808f;
-  --up: #14834e;
-  --down: #c2413e;
-  --even: #8a93a0;
-  --shimmer: rgba(11, 14, 19, 0.06);
-  --glow: 0;
-  --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
-  --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, 'Segoe UI', Roboto, sans-serif;
-  color-scheme: light;
-}
+@import './tokens.css';
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --bg: #0b0e13;
-    --card: #141922;
-    --hairline: #26303f;
-    --glass: rgba(28, 34, 45, 0.62);
-    --glass-edge: rgba(255, 255, 255, 0.08);
-    --text: #f2f4f8;
-    --text-2: #9aa3b2;
-    --text-3: #626c7c;
-    --gold: #e9b44c;
-    --teal: #3dbccb;
-    --up: #41d18b;
-    --down: #f0716e;
-    --even: #8b95a5;
-    --shimmer: rgba(255, 255, 255, 0.06);
-    --glow: 1;
-    color-scheme: dark;
-  }
-}
-
-:root[data-theme='dark'] {
-  --bg: #0b0e13;
-  --card: #141922;
-  --hairline: #26303f;
-  --glass: rgba(28, 34, 45, 0.62);
-  --glass-edge: rgba(255, 255, 255, 0.08);
-  --text: #f2f4f8;
-  --text-2: #9aa3b2;
-  --text-3: #626c7c;
-  --gold: #e9b44c;
-  --teal: #3dbccb;
-  --up: #41d18b;
-  --down: #f0716e;
-  --even: #8b95a5;
-  --shimmer: rgba(255, 255, 255, 0.06);
-  --glow: 1;
-  color-scheme: dark;
-}
-
-* { box-sizing: border-box; }
-
-html { -webkit-text-size-adjust: 100%; }
-
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font: 16px/1.4 var(--sans);
-  -webkit-font-smoothing: antialiased;
-  min-height: 100vh;
-}
-
-a { color: inherit; text-decoration: none; }
-button, select, input { font: inherit; color: inherit; }
-h1, h2, p { margin: 0; }
-:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 6px; }
 /* Focus moves to <main> after each navigation; it should never draw a ring around the page. */
 main:focus, main:focus-visible { outline: none; }
-
-.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
-.muted { color: var(--text-2); }
-.small { font-size: 12px; }
-.center { text-align: center; }
-.spacer { flex: 1; }
-.text-up { color: var(--up); }
-.text-down { color: var(--down); }
-.text-even { color: var(--text-2); }
 
 /* MARK: Top bar */
 
@@ -937,3 +851,5 @@ a.tournament-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(-
 .share-button.copied { color: var(--up); border-color: color-mix(in srgb, var(--up) 45%, transparent); }
 .header-actions { display: flex; gap: 8px; margin-top: 4px; }
 .title-actions .button { white-space: nowrap; }
+.about-footer .coach-invite { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--hairline); font-size: 14px; color: var(--text); }
+.about-footer .coach-invite a { font-weight: 600; }
