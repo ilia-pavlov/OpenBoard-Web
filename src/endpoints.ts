@@ -52,8 +52,8 @@ export const Patterns = {
 
 export const Links = {
   join: 'https://www.uschess.org/join',
-  /** Stripe Payment Link for "Support OpenBoard" (donor picks the amount). Empty hides every support button. */
-  donate: '',
+  /** Stripe Payment Link for "Support OpenBoard": $7 a gift, donor picks how many. Empty hides every support button. */
+  donate: 'https://donate.stripe.com/eVq7sN3X0bc3dVrcAR8Ra05',
 } as const
 
 /** `template` with each {placeholder} filled in. */
