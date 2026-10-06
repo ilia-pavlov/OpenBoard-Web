@@ -278,3 +278,6 @@ body.coach {
 .show-more { align-self: center; }
 .group-chart svg.filtered .series polyline { opacity: 0.45; }
 .overview { display: flex; flex-direction: column; gap: 10px; }
+.prov-tag { display: block; font-family: var(--sans); font-size: 10px; font-weight: 700; color: var(--gold); letter-spacing: 0.02em; margin-top: 2px; white-space: nowrap; }
+.pc-provisional { margin: 0; padding: 10px 12px; list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 13px; border-radius: 10px; background: color-mix(in srgb, var(--gold) 9%, transparent); }
+.pc-provisional strong { color: var(--gold); }

@@ -853,3 +853,14 @@ a.tournament-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(-
 .title-actions .button { white-space: nowrap; }
 .about-footer .coach-invite { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--hairline); font-size: 14px; color: var(--text); }
 .about-footer .coach-invite a { font-weight: 600; }
+
+/* MARK: Provisional rating */
+
+.provisional { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.provisional-text { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.provisional-text strong { color: var(--gold); font-weight: 700; }
+.provisional-bar { height: 6px; border-radius: 3px; background: var(--hairline); overflow: hidden; }
+.provisional-bar i { display: block; height: 100%; border-radius: 3px; background: var(--gold); }
+.provisional .muted { font-size: 12px; }
+.provisional.established span { color: var(--up); font-weight: 600; }
+.mini-provisional { font-size: 12px; font-weight: 700; color: var(--gold); white-space: nowrap; }

@@ -3,7 +3,8 @@
 
 import { fetchPlayer } from '../api'
 import {
-  type Player, type Rating, type RankSlot, classTitle, delta, firstName, hasHistory, isProvisional, peakRegular,
+  type Player, type ProvisionalStatus, type Rating, type RankSlot, classTitle, delta, establishedAfter, firstName, hasHistory,
+  peakRegular, provisionalStatus,
   topPercent,
 } from '../models'
 import {
@@ -116,10 +117,10 @@ function playerPage(player: Player, mode: 'mycard' | 'profile'): string {
     </div>
     ${badgeSlot(player.id, 'all')}
 
-    ${historyLink(player, 'regular', heroCard(regular, lastDelta, player.ratingHistory, peakRegular(player), hasHistory(player, 'regular')), 'hero')}
+    ${historyLink(player, 'regular', heroCard(regular, lastDelta, player.ratingHistory, peakRegular(player), hasHistory(player, 'regular'), provisionalStatus(player, 'regular')), 'hero')}
     <div class="mini-row">
-      ${historyLink(player, 'quick', miniCard('Quick', player.ratings.quick, hasHistory(player, 'quick')), 'mini')}
-      ${miniCard('Blitz', player.ratings.blitz, false)}
+      ${historyLink(player, 'quick', miniCard('Quick', player.ratings.quick, hasHistory(player, 'quick'), provisionalStatus(player, 'quick')), 'mini')}
+      ${miniCard('Blitz', player.ratings.blitz, false, provisionalStatus(player, 'blitz'))}
     </div>
 
     ${lastEvent && lastDelta ? justRated(player) : ''}
@@ -144,13 +145,44 @@ function classChip(rating?: number, stateName?: string): string {
   return parts.length ? `<span class="class-chip"><i></i>${esc(parts.join(' · '))}</span>` : ''
 }
 
-function heroCard(rating: Rating | undefined, d: number | undefined, spark: number[], peak: number | undefined, disclosure: boolean): string {
+/**
+ * How close a provisional rating is to established: a progress bar with the
+ * live count (tournaments rated since the official list included), and the
+ * official list's count when it differs.
+ */
+function provisionalMeter(status?: ProvisionalStatus): string {
+  if (!status) return ''
+  if (!status.provisional) {
+    return status.officialProvisional
+      ? `<div class="provisional established"><span>✓ Established: 26 games reached. Official from the next monthly list.</span></div>`
+      : ''
+  }
+  const games = status.liveGames ?? 0
+  const left = status.liveRemaining ?? establishedAfter - games
+  const official =
+    status.officialRemaining != null && status.officialRemaining !== left
+      ? `<span class="muted">Official list: ${status.officialGames} games, ${status.officialRemaining} to go</span>`
+      : ''
+  return `<div class="provisional" role="group" aria-label="Provisional rating: ${games} of ${establishedAfter} games, ${left} to go">
+    <div class="provisional-text"><strong>Provisional · ${left} ${left === 1 ? 'game' : 'games'} to go</strong><span class="mono muted">${games} / ${establishedAfter}</span></div>
+    <div class="provisional-bar" aria-hidden="true"><i style="width:${Math.min(100, (games / establishedAfter) * 100).toFixed(1)}%"></i></div>
+    ${official}
+  </div>`
+}
+
+function heroCard(
+  rating: Rating | undefined,
+  d: number | undefined,
+  spark: number[],
+  peak: number | undefined,
+  disclosure: boolean,
+  status: ProvisionalStatus | undefined,
+): string {
   let footer = 'UNRATED — PLAY A RATED EVENT TO GET ON THE BOARD'
   if (rating?.value != null) {
     const parts: string[] = []
     if (rating.floor != null) parts.push(`FLOOR ${rating.floor}`)
-    if (rating.games != null) parts.push(`${rating.games} GAMES`)
-    if (isProvisional(rating)) parts.push('PROVISIONAL (<26 GAMES)')
+    if (!status?.provisional && rating.games != null) parts.push(`${rating.games} GAMES`)
     if (peak != null) parts.push(`PEAK ${peak}`)
     footer = parts.join(' · ')
   }
@@ -158,21 +190,24 @@ function heroCard(rating: Rating | undefined, d: number | undefined, spark: numb
     <div class="card-head">${sectionLabel('Regular')}<span class="spacer"></span>${d ? deltaBadge(d, true) : ''}${disclosure ? chevron : ''}</div>
     ${clockDigits(rating?.value, { size: 'hero' })}
     ${spark.length > 1 ? `<div class="spark-box">${sparkline(spark)}</div>` : ''}
+    ${provisionalMeter(status)}
     <div class="card-foot mono">${footer}</div>
   </div>`
 }
 
-function miniCard(label: string, rating: Rating | undefined, disclosure: boolean): string {
+function miniCard(label: string, rating: Rating | undefined, disclosure: boolean, status: ProvisionalStatus | undefined): string {
   let foot = 'UNRATED'
+  const provisional = rating?.value != null && status?.provisional && status.liveRemaining != null
   if (rating?.value != null) {
     const parts: string[] = []
-    if (rating.games != null) parts.push(`${rating.games} GAMES`)
+    if (!provisional && rating.games != null) parts.push(`${rating.games} GAMES`)
     if (rating.floor != null) parts.push(`FLOOR ${rating.floor}`)
     foot = parts.join(' · ') || '&nbsp;'
   }
   return `<div class="glass mini-card">
     <div class="card-head">${sectionLabel(label)}<span class="spacer"></span>${disclosure ? chevron : ''}</div>
     ${clockDigits(rating?.value, { tint: 'teal', size: 'lg' })}
+    ${provisional ? `<div class="mini-provisional" title="${status!.liveRemaining} more games until the rating is established">Provisional · ${status!.liveRemaining} left</div>` : ''}
     <div class="card-foot small mono">${foot}</div>
   </div>`
 }

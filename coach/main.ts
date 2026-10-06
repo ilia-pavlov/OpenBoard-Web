@@ -398,7 +398,7 @@ function rosterTable(group: Group, rows: PlayerRow[]): string {
           return `<tr>
             <td class="player-cell">${playerButton(r.id, r.name)} ${stateChip(r.state)} ${badgeSlot(r.id, 'compact')}<small class="mono">ID ${esc(r.id)}</small></td>
             <td class="num mono">${r.published ?? '–'}</td>
-            <td class="num mono${pendingSupplement ? ' live-new' : ''}"${pendingSupplement ? ' title="New since the monthly supplement"' : ''}>${r.live ?? '–'}</td>
+            <td class="num mono${pendingSupplement ? ' live-new' : ''}"${pendingSupplement ? ' title="New since the monthly supplement"' : ''}>${r.live ?? '–'}${provisionalTag(r)}</td>
             <td class="num">${change(r.lastChange)}</td>
             <td class="num">${r.periodEvents ? change(r.periodChange) : '<span class="muted">–</span>'}</td>
             <td class="num mono">${r.periodEvents}</td>
@@ -416,6 +416,14 @@ function rosterTable(group: Group, rows: PlayerRow[]): string {
         .join('')}
     </tbody>
   </table>`
+}
+
+/** "P · 4 to go" under a provisional player's live rating. */
+function provisionalTag(r: PlayerRow): string {
+  const s = r.provisional
+  if (!s?.provisional || s.liveRemaining == null) return ''
+  const official = s.officialRemaining != null && s.officialRemaining !== s.liveRemaining ? ` (official list: ${s.officialRemaining} to go)` : ''
+  return `<small class="prov-tag" title="Provisional rating: ${s.liveGames} of 26 games${official}">P · ${s.liveRemaining} to go</small>`
 }
 
 function resultsHTML(ready: Player[]): string {
@@ -512,11 +520,12 @@ function openPlayerCard(id: string, anchor: HTMLElement) {
       <thead><tr><th></th><th>Published</th><th>Live</th><th>${esc(periods[period])}</th></tr></thead>
       <tbody>${rows
         .map(
-          ({ t, row }) => `<tr><th>${ratingTypes[t]}</th><td class="mono">${row.published ?? '–'}</td><td class="mono${row.live != null && row.live !== row.published ? ' live-new' : ''}">${row.live ?? '–'}</td>
+          ({ t, row }) => `<tr><th>${ratingTypes[t]}</th><td class="mono">${row.published ?? '–'}</td><td class="mono${row.live != null && row.live !== row.published ? ' live-new' : ''}">${row.live ?? '–'}${provisionalTag(row)}</td>
             <td>${row.periodEvents && row.periodChange != null ? deltaBadge(row.periodChange) : '<span class="muted">–</span>'}</td></tr>`,
         )
         .join('')}</tbody>
     </table>
+    ${provisionalSummary(rows)}
     ${
       last
         ? `<div class="pc-last"><span class="muted small">Last event</span><strong>${esc(last.name)}</strong>
@@ -538,6 +547,18 @@ function openPlayerCard(id: string, anchor: HTMLElement) {
   card.style.left = `${left + window.scrollX}px`
   card.style.top = `${top + window.scrollY}px`
   card.querySelector<HTMLElement>('a.button')?.focus()
+}
+
+/** One line per rating type that's still provisional, for the player card. */
+function provisionalSummary(rows: { t: RatingType; row: PlayerRow }[]): string {
+  const lines = rows
+    .filter(({ row }) => row.provisional?.provisional && row.provisional.liveRemaining != null)
+    .map(({ t, row }) => {
+      const s = row.provisional!
+      const official = s.officialRemaining != null && s.officialRemaining !== s.liveRemaining ? ` · official list ${s.officialGames}/26` : ''
+      return `<li><strong>${ratingTypes[t]}</strong> provisional: ${s.liveGames}/26 games, <strong>${s.liveRemaining} to go</strong>${official}</li>`
+    })
+  return lines.length ? `<ul class="pc-provisional">${lines.join('')}</ul>` : ''
 }
 
 document.addEventListener('keydown', (e) => {

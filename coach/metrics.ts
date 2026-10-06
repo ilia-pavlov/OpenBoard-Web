@@ -2,7 +2,7 @@
 // same Player data the family app uses, for a chosen rating type and period.
 // Pure functions, unit-tested.
 
-import type { EventResult, Player, PrePost } from '../src/models'
+import { type EventResult, type Player, type PrePost, type ProvisionalStatus, provisionalStatus } from '../src/models'
 
 const day = 86_400_000
 
@@ -35,6 +35,8 @@ export interface PlayerRow {
   periodEvents: number
   /** The latest rated event of any type. */
   lastRated: Date | null
+  /** How far this rating type is from established (live and official). */
+  provisional?: ProvisionalStatus
 }
 
 export const sinceOf = (days: PeriodDays, now = new Date()) => (days ? now.getTime() - days * day : -Infinity)
@@ -56,6 +58,7 @@ export function playerRow(p: Player, type: RatingType, days: PeriodDays, now = n
     periodChange: type === 'blitz' ? undefined : changes.reduce((sum, r) => sum + (r.post - r.pre), 0),
     periodEvents: inPeriod.length,
     lastRated: p.events[0]?.date ?? null,
+    provisional: provisionalStatus(p, type),
   }
 }
 

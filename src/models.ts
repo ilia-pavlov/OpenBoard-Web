@@ -300,6 +300,58 @@ export interface PlayerSummary {
 // MARK: - Domain helpers
 
 export const isProvisional = (r: Rating) => r.provisional ?? (r.games ?? 0) < 26
+
+/** A US Chess rating stays provisional until it's based on this many games. */
+export const establishedAfter = 26
+
+export interface ProvisionalStatus {
+  /** Provisional now, counting tournaments rated since the official list. */
+  provisional: boolean
+  /** Games counted so far, live (after the latest tournament). */
+  liveGames?: number
+  /** Games still needed to become established, live. */
+  liveRemaining?: number
+  /** Provisional on the official monthly list. */
+  officialProvisional: boolean
+  officialGames?: number
+  officialRemaining?: number
+}
+
+/**
+ * How far a player's rating is from established, live and official. US Chess
+ * gives the official count on the member's rating (as of the monthly list) and
+ * the live count on each tournament result (postProvisionalGameCount); an
+ * established rating has no count. Undefined when the player has no rating of
+ * that type yet.
+ */
+export function provisionalStatus(p: Player, system: 'regular' | 'quick' | 'blitz'): ProvisionalStatus | undefined {
+  const official = p.ratings[system]
+  const latest = system === 'blitz' ? undefined : p.events.map((e) => (system === 'regular' ? e.regular : e.quick)).find((r) => r?.post != null)
+  if (official?.value == null && !latest) return undefined
+  const remaining = (games?: number) => (games != null ? Math.max(0, establishedAfter - games) : undefined)
+  const officialProvisional = official?.value != null && official.provisional !== false && isProvisional(official)
+  const officialGames = officialProvisional ? official?.games : undefined
+  // The latest tournament is newer than the official list: its count is the live one.
+  // No count on it means the rating is established.
+  const liveGames = latest ? latest.games : officialGames
+  const provisional = latest ? latest.games != null && latest.games < establishedAfter : officialProvisional
+  return {
+    provisional,
+    liveGames: provisional ? liveGames : undefined,
+    liveRemaining: provisional ? remaining(liveGames) : undefined,
+    officialProvisional,
+    officialGames,
+    officialRemaining: officialProvisional ? remaining(officialGames) : undefined,
+  }
+}
+
+/** "Provisional · 4 games to go", "Established", or "" for no rating. */
+export function provisionalText(status: ProvisionalStatus | undefined): string {
+  if (!status) return ''
+  if (!status.provisional) return status.officialProvisional ? 'Established (official from the next list)' : 'Established'
+  const left = status.liveRemaining
+  return left != null ? `Provisional · ${left} ${left === 1 ? 'game' : 'games'} to go` : 'Provisional'
+}
 export const delta = (p?: PrePost) => (p?.pre != null && p.post != null ? p.post - p.pre : undefined)
 export const resultFor = (e: EventResult, system: RatingSystem) => (system === 'regular' ? e.regular : e.quick)
 export const hasHistory = (p: Player, system: RatingSystem) => p.events.some((e) => resultFor(e, system)?.post != null)
