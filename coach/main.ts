@@ -10,6 +10,7 @@ import type { Player, PlayerSummary } from '../src/models'
 import { cached, write as storeWrite } from '../src/store'
 import { badgeSlot, ranksFor, startBadges, topListsReady } from '../src/toplists'
 import { clockDigits, deltaBadge, emptyState, esc, eventDate, num, signed, stateChip } from '../src/ui'
+import { enableProvisionalInfo, provisionalInfoButton } from '../src/provisional-info'
 import { renderGroupChart, resetChart } from './chart'
 import { type Group, exportFile, groups, parseExportFile, parseShareRoster, shareRosterURL } from './groups'
 import {
@@ -423,7 +424,7 @@ function provisionalTag(r: PlayerRow): string {
   const s = r.provisional
   if (!s?.provisional || s.liveRemaining == null) return ''
   const official = s.officialRemaining != null && s.officialRemaining !== s.liveRemaining ? ` (official list: ${s.officialRemaining} to go)` : ''
-  return `<small class="prov-tag" title="Provisional rating: ${s.liveGames} of 26 games${official}">P · ${s.liveRemaining} to go</small>`
+  return `<small class="prov-tag" title="Provisional rating: ${s.liveGames} of 26 games${official}">P · ${s.liveRemaining} to go ${provisionalInfoButton()}</small>`
 }
 
 function resultsHTML(ready: Player[]): string {
@@ -558,7 +559,7 @@ function provisionalSummary(rows: { t: RatingType; row: PlayerRow }[]): string {
       const official = s.officialRemaining != null && s.officialRemaining !== s.liveRemaining ? ` · official list ${s.officialGames}/26` : ''
       return `<li><strong>${ratingTypes[t]}</strong> provisional: ${s.liveGames}/26 games, <strong>${s.liveRemaining} to go</strong>${official}</li>`
     })
-  return lines.length ? `<ul class="pc-provisional">${lines.join('')}</ul>` : ''
+  return lines.length ? `<div class="pc-provisional"><span class="pc-provisional-head">Provisional ${provisionalInfoButton()}</span><ul>${lines.join('')}</ul></div>` : ''
 }
 
 document.addEventListener('keydown', (e) => {
@@ -765,5 +766,6 @@ window.addEventListener('hashchange', () => {
   route()
 })
 startBadges(document.body)
+enableProvisionalInfo()
 topListsReady().then(redrawSoon)
 route()

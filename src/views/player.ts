@@ -14,6 +14,7 @@ import {
 import type { View } from '../router'
 import { mountBestWins } from './bestwins-card'
 import { snapshot } from '../watchlist'
+import { provisionalInfoButton } from '../provisional-info'
 import { playerShareURL, share, shareButton } from '../share'
 import { badgeSlot } from '../toplists'
 
@@ -164,7 +165,7 @@ function provisionalMeter(status?: ProvisionalStatus): string {
       ? `<span class="muted">Official list: ${status.officialGames} games, ${status.officialRemaining} to go</span>`
       : ''
   return `<div class="provisional" role="group" aria-label="Provisional rating: ${games} of ${establishedAfter} games, ${left} to go">
-    <div class="provisional-text"><strong>Provisional · ${left} ${left === 1 ? 'game' : 'games'} to go</strong><span class="mono muted">${games} / ${establishedAfter}</span></div>
+    <div class="provisional-text"><strong>Provisional · ${left} ${left === 1 ? 'game' : 'games'} to go ${provisionalInfoButton()}</strong><span class="mono muted">${games} / ${establishedAfter}</span></div>
     <div class="provisional-bar" aria-hidden="true"><i style="width:${Math.min(100, (games / establishedAfter) * 100).toFixed(1)}%"></i></div>
     ${official}
   </div>`
@@ -207,7 +208,7 @@ function miniCard(label: string, rating: Rating | undefined, disclosure: boolean
   return `<div class="glass mini-card">
     <div class="card-head">${sectionLabel(label)}<span class="spacer"></span>${disclosure ? chevron : ''}</div>
     ${clockDigits(rating?.value, { tint: 'teal', size: 'lg' })}
-    ${provisional ? `<div class="mini-provisional" title="${status!.liveRemaining} more games until the rating is established">Provisional · ${status!.liveRemaining} left</div>` : ''}
+    ${provisional ? `<div class="mini-provisional" title="${status!.liveRemaining} more games until the rating is established">Provisional · ${status!.liveRemaining} left ${provisionalInfoButton()}</div>` : ''}
     <div class="card-foot small mono">${foot}</div>
   </div>`
 }

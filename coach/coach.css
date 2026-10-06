@@ -279,5 +279,7 @@ body.coach {
 .group-chart svg.filtered .series polyline { opacity: 0.45; }
 .overview { display: flex; flex-direction: column; gap: 10px; }
 .prov-tag { display: block; font-family: var(--sans); font-size: 10px; font-weight: 700; color: var(--gold); letter-spacing: 0.02em; margin-top: 2px; white-space: nowrap; }
-.pc-provisional { margin: 0; padding: 10px 12px; list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 13px; border-radius: 10px; background: color-mix(in srgb, var(--gold) 9%, transparent); }
+.pc-provisional { padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; border-radius: 10px; background: color-mix(in srgb, var(--gold) 9%, transparent); }
+.pc-provisional ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.pc-provisional-head { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-2); }
 .pc-provisional strong { color: var(--gold); }

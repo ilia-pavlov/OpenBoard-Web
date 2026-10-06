@@ -12,6 +12,7 @@ import { searchView } from './views/search'
 import { watchingView } from './views/watching'
 import { checkIfDue, registerServiceWorker } from './watchlist'
 import { openSharedLink } from './share'
+import { enableProvisionalInfo } from './provisional-info'
 import { top100BrowseView, top100ListView } from './views/top100'
 import { majorEventView, tournamentView } from './views/tournament'
 
@@ -59,6 +60,7 @@ openSharedLink()
 
 const app = document.getElementById('app')!
 startBadges(app)
+enableProvisionalInfo()
 registerServiceWorker()
 checkIfDue()
 startRouter(
