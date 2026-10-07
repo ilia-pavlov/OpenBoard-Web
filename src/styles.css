@@ -941,3 +941,8 @@ a.tournament-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(-
   white-space: nowrap;
 }
 .wip-badge::before { content: '🚧'; font-size: 11px; }
+
+/* MARK: The row you opened, outlined when you come back (like the iOS app) */
+
+.last-opened { border-color: color-mix(in srgb, var(--gold) 90%, transparent) !important; box-shadow: 0 0 0 1px var(--gold); }
+.list .last-opened { box-shadow: inset 0 0 0 2px var(--gold); border-radius: inherit; }
