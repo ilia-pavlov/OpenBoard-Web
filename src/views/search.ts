@@ -37,7 +37,7 @@ export const searchView: View = ({ root, params, signal }) => {
         <span><strong>About OpenBoard</strong><small>Why it exists, what it can do, and how to support it</small></span>
         ${chevron}
       </a>
-      <a class="card browse-row" href="${Links.join}" target="_blank" rel="noopener">
+      <a class="card browse-row join-row" href="${Links.join}" target="_blank" rel="noopener">
         <span class="browse-icon" aria-hidden="true">♙</span>
         <span><strong>Join or renew US Chess</strong><small>Membership is required to play rated events and get an official rating</small></span>
         <span class="external" aria-hidden="true">↗</span>
