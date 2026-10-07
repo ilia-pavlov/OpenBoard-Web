@@ -64,12 +64,22 @@ export const aboutView: View = ({ root, params }) => {
       <a class="button big" href="#/search">Find a player</a>
     </div>
 
+    <section class="card coach-invite-card" aria-labelledby="coach-invite-title">
+      <div class="coach-invite-head">
+        <span class="coach-invite-icon" aria-hidden="true">🏫</span>
+        <h2 id="coach-invite-title">For schools and coaches</h2>
+        <span class="wip-badge">Work in progress</span>
+      </div>
+      <p>If you're a school or a coach, try <strong>OpenBoard for Coaches</strong>. You'll like it: your whole team on one computer screen, with every kid's rating, progress and recent results.</p>
+      <p class="wip-note">It's still being built and changes often. Free while it's in progress.</p>
+      <a class="button prominent big" href="/coach/">Try OpenBoard for Coaches →</a>
+    </section>
+
     <section class="about-footer">
       <p>Ratings come from US Chess's <a href="https://ratings.uschess.org" target="_blank" rel="noopener">ratings site (MUIR)</a>. Tournaments come from US Chess's <a href="https://new.uschess.org/upcoming-tournaments" target="_blank" rel="noopener">Tournament Life Announcements</a> and Plan Ahead Calendar.</p>
       <p>Also on iPhone and iPad: <a href="https://github.com/ilia-pavlov/OpenBoard" target="_blank" rel="noopener">OpenBoard for iOS</a>.</p>
       ${supportLink()}
       <p class="muted">Not affiliated with or endorsed by the US Chess Federation. Want to play rated games? <a href="https://www.uschess.org/join" target="_blank" rel="noopener">Join US Chess</a>.</p>
-      <p class="coach-invite">If you're a school or a coach, try <a href="/coach/">OpenBoard for Coaches</a>. You'll like it.</p>
     </section>
 
     <details class="ideology">

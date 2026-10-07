@@ -851,8 +851,6 @@ a.tournament-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(-
 .share-button.copied { color: var(--up); border-color: color-mix(in srgb, var(--up) 45%, transparent); }
 .header-actions { display: flex; gap: 8px; margin-top: 4px; }
 .title-actions .button { white-space: nowrap; }
-.about-footer .coach-invite { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--hairline); font-size: 14px; color: var(--text); }
-.about-footer .coach-invite a { font-weight: 600; }
 
 /* MARK: Provisional rating */
 
@@ -909,3 +907,37 @@ a.tournament-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(-
 .brand-info { margin-left: 2px; }
 .brand[aria-current] { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 55%, transparent); background: color-mix(in srgb, var(--gold) 12%, var(--card)); }
 .brand[aria-current] .brand-sub, .brand[aria-current] .brand-info { color: var(--gold); }
+
+/* MARK: Coaches invitation (About) */
+
+.coach-invite-card {
+  padding: 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-color: color-mix(in srgb, var(--teal) 45%, var(--hairline));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--teal) 10%, var(--card)), var(--card));
+}
+.coach-invite-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.coach-invite-head h2 { margin: 0; font-size: 19px; }
+.coach-invite-icon { font-size: 24px; }
+.coach-invite-card p { margin: 0; font-size: 15px; line-height: 1.5; color: var(--text-2); }
+.coach-invite-card p strong { color: var(--text); }
+.coach-invite-card .wip-note { font-size: 13px; color: var(--text-2); }
+.coach-invite-card .button { align-self: stretch; margin-top: 4px; }
+
+/* "Work in progress" label: amber with text that keeps 4.5:1 contrast. */
+.wip-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  background: color-mix(in srgb, var(--gold) 22%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--gold) 70%, transparent);
+  white-space: nowrap;
+}
+.wip-badge::before { content: '🚧'; font-size: 11px; }
