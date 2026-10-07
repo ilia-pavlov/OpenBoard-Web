@@ -15,6 +15,7 @@ import type { View } from '../router'
 import { mountBestWins } from './bestwins-card'
 import { snapshot } from '../watchlist'
 import { provisionalInfoButton } from '../provisional-info'
+import { canDonate } from '../donate'
 import { playerShareURL, share, shareButton } from '../share'
 import { badgeSlot } from '../toplists'
 
@@ -23,10 +24,11 @@ export const myCardView: View = (ctx) => {
   if (!id) {
     ctx.root.innerHTML = `<h1 class="screen-title">My Card</h1>
       <div class="onboarding">
-        <div class="crown" aria-hidden="true">♛</div>
+        <div class="about-crown" aria-hidden="true">♛</div>
         <h2>Welcome to OpenBoard</h2>
         <p>Watch a US Chess player to build your card: search by name or 8-digit member ID, open their profile, and tap ♥ Watch.</p>
         <a class="button prominent" href="#/search">Find a player</a>
+        <a class="link-button" href="#/about">What is OpenBoard?</a>
       </div>`
     return
   }
@@ -132,8 +134,14 @@ function playerPage(player: Player, mode: 'mycard' | 'profile'): string {
       player.events.length
         ? `${sectionLabel('Recent events')}<div class="stack">${player.events.slice(0, 6).map((e) => eventRow(e, { highlight: player.id })).join('')}</div>`
         : emptyState('♟', 'No rated events yet', 'Events appear here after US Chess rates them.')
-    }`
+    }
+    ${mode === 'mycard' ? aboutFooter() : ''}`
 }
+
+/** A quiet way to About (and Support) at the end of My Card, for people who never tap the logo. */
+const aboutFooter = () => `<nav class="card-footer-links" aria-label="About">
+    <a href="#/about">♛ About OpenBoard</a>${canDonate() ? '<span aria-hidden="true">·</span><a href="#/about">♥ Support</a>' : ''}
+  </nav>`
 
 function historyLink(player: Player, system: 'regular' | 'quick', card: string, kind: string): string {
   return hasHistory(player, system)

@@ -32,6 +32,11 @@ export const searchView: View = ({ root, params, signal }) => {
         <span><strong>Top 100 lists</strong><small>Best US Chess players by age: 7 &amp; under through 18, girls, seniors</small></span>
         ${chevron}
       </a>
+      <a class="card browse-row" href="#/about">
+        <span class="browse-icon" aria-hidden="true">♛</span>
+        <span><strong>About OpenBoard</strong><small>Why it exists, what it can do, and how to support it</small></span>
+        ${chevron}
+      </a>
       <a class="card browse-row" href="${Links.join}" target="_blank" rel="noopener">
         <span class="browse-icon" aria-hidden="true">♙</span>
         <span><strong>Join or renew US Chess</strong><small>Membership is required to play rated events and get an official rating</small></span>
