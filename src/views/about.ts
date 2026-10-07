@@ -86,12 +86,13 @@ export const aboutView: View = ({ root, params }) => {
       </div>
     </details>`
 
-  // From the header's "Our ideology" link: open it and bring it into view. The
-  // query is dropped so the link works again on the next tap.
-  if (params.get('ideology')) {
+  // From the header button: open the ideology section (and, for older links,
+  // bring it into view). The query is dropped so the button works again.
+  const ideologyParam = params.get('ideology')
+  if (ideologyParam) {
     const ideology = root.querySelector<HTMLDetailsElement>('.ideology')!
     ideology.open = true
-    requestAnimationFrame(() => ideology.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+    if (ideologyParam !== 'open') requestAnimationFrame(() => ideology.scrollIntoView({ behavior: 'smooth', block: 'start' }))
     replaceQuery(new URLSearchParams())
   }
 }

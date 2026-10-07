@@ -887,10 +887,25 @@ a.tournament-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(-
 .ideology-body ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 15px; line-height: 1.5; color: var(--text-2); }
 .ideology-body li strong { color: var(--text); }
 
-/* MARK: Header: OpenBoard as a tab, and the ideology link */
+/* MARK: Header: OpenBoard as one two-line button (About · our ideology) */
 
-.brand { padding: 6px 12px; margin-left: -12px; border-radius: 999px; transition: background 0.15s ease, color 0.15s ease; }
-.brand[aria-current] { color: var(--gold); background: color-mix(in srgb, var(--gold) 14%, transparent); }
-.brand[aria-current] .brand-info { color: var(--gold); }
-.header-link { font-size: 14px; font-weight: 600; color: var(--text-2); white-space: nowrap; }
-.header-link:hover { color: var(--gold); }
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 10px;
+  margin-left: -4px;
+  border-radius: 14px;
+  border: 1px solid var(--hairline);
+  background: var(--card);
+  font-size: 16px;
+  line-height: 1.1;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.brand:hover { border-color: color-mix(in srgb, var(--gold) 50%, var(--hairline)); }
+.brand-text { display: flex; flex-direction: column; align-items: flex-start; }
+.brand-name { font-weight: 700; font-size: 16px; }
+.brand-sub { font-size: 11px; font-weight: 600; color: var(--text-2); letter-spacing: 0.01em; }
+.brand-info { margin-left: 2px; }
+.brand[aria-current] { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 55%, transparent); background: color-mix(in srgb, var(--gold) 12%, var(--card)); }
+.brand[aria-current] .brand-sub, .brand[aria-current] .brand-info { color: var(--gold); }
