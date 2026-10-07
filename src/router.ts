@@ -45,6 +45,8 @@ const memory = {
 
 const scrolls = new Map<number, number>(memory.read<[number, number][]>('ob.scrolls', []))
 const opened = new Map<number, string>(memory.read<[number, string][]>('ob.opened', []))
+/** Entry id → the entry (and its hash) it was opened from, for in-app back links. */
+const from = new Map<number, { entry: number; hash: string }>(memory.read<[number, { entry: number; hash: string }][]>('ob.from', []))
 let nextEntry = memory.read<number>('ob.nextEntry', 1)
 
 const entryOf = () => (history.state as EntryState | null)?.obEntry
@@ -54,14 +56,21 @@ function save() {
   const recent = <T>(m: Map<number, T>) => [...m].slice(-50)
   memory.write('ob.scrolls', recent(scrolls))
   memory.write('ob.opened', recent(opened))
+  memory.write('ob.from', recent(from))
   memory.write('ob.nextEntry', nextEntry)
 }
 
+const pathOf = (hash: string) => hash.replace(/^#/, '').split('?')[0] || '/'
+
 export function startRouter(root: HTMLElement, routes: Route[], notFound: View) {
+  // We restore positions ourselves, after the list has loaded.
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
   let controller: AbortController | undefined
   let lastPath = ''
   let current = 0
+  let currentHash = ''
   let cancelRestore: (() => void) | undefined
+  let openedFrom: { entry: number; hash: string } | undefined
 
   const render = () => {
     const [path, query = ''] = location.hash.replace(/^#/, '').split('?')
@@ -80,9 +89,12 @@ export function startRouter(root: HTMLElement, routes: Route[], notFound: View) 
     if (entry == null) {
       entry = nextEntry++
       history.replaceState({ ...(history.state as object | null), obEntry: entry } satisfies EntryState, '')
+      if (openedFrom) from.set(entry, openedFrom)
       save()
     }
+    openedFrom = undefined
     current = entry
+    currentHash = location.hash
 
     const normalized = path || '/'
     const route = routes.find((r) => r.pattern.test(normalized))
@@ -129,6 +141,16 @@ export function startRouter(root: HTMLElement, routes: Route[], notFound: View) 
     (e) => {
       const link = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[href^="#/"]')
       if (!link) return
+      // "‹ Events" on a screen opened from Events is really Back: return to
+      // that entry, so the list keeps its position.
+      const parent = from.get(current)
+      if (link.classList.contains('back-link') && parent && pathOf(parent.hash) === pathOf(link.getAttribute('href')!)) {
+        e.preventDefault()
+        e.stopPropagation()
+        history.back()
+        return
+      }
+      openedFrom = { entry: current, hash: currentHash }
       scrolls.set(current, window.scrollY)
       opened.set(current, link.getAttribute('href')!)
       save()
@@ -146,13 +168,20 @@ export function startRouter(root: HTMLElement, routes: Route[], notFound: View) 
  */
 function restore(root: HTMLElement, y: number, href?: string): () => void {
   let stopped = false
+  const started = performance.now()
   const stop = () => {
     stopped = true
+    window.removeEventListener('wheel', onWheel)
+    window.removeEventListener('touchmove', onUser)
+    window.removeEventListener('keydown', onUser)
   }
-  const started = performance.now()
-  window.addEventListener('wheel', stop, { once: true, passive: true })
-  window.addEventListener('touchmove', stop, { once: true, passive: true })
-  window.addEventListener('keydown', stop, { once: true })
+  // A trackpad swipe-back keeps sending (sideways) wheel events after the
+  // page changes; only vertical scrolling after a moment means the reader took over.
+  const onUser = () => performance.now() - started > 300 && stop()
+  const onWheel = (e: WheelEvent) => Math.abs(e.deltaY) > Math.abs(e.deltaX) && onUser()
+  window.addEventListener('wheel', onWheel, { passive: true })
+  window.addEventListener('touchmove', onUser, { passive: true })
+  window.addEventListener('keydown', onUser)
 
   const step = () => {
     if (stopped) return
@@ -165,6 +194,7 @@ function restore(root: HTMLElement, y: number, href?: string): () => void {
     if (reachable) window.scrollTo(0, y)
     const done = reachable && (!href || link)
     if (!done && performance.now() - started < 4000) requestAnimationFrame(step)
+    else stop()
   }
   requestAnimationFrame(step)
   return stop
