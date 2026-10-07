@@ -69,5 +69,19 @@ export const aboutView: View = ({ root }) => {
       ${supportLink()}
       <p class="muted">Not affiliated with or endorsed by the US Chess Federation. Want to play rated games? <a href="https://www.uschess.org/join" target="_blank" rel="noopener">Join US Chess</a>.</p>
       <p class="coach-invite">If you're a school or a coach, try <a href="/coach/">OpenBoard for Coaches</a>. You'll like it.</p>
-    </section>`
+    </section>
+
+    <details class="ideology">
+      <summary class="button big">♛ Our ideology</summary>
+      <div class="card ideology-body">
+        <h2>What OpenBoard stands for</h2>
+        <ul>
+          <li><strong>Free for families.</strong> Parents and kids never pay to follow ratings, find tournaments or track friends and rivals.</li>
+          <li><strong>No ads, no accounts, no tracking.</strong> Who you watch and what you save stays on your own device.</li>
+          <li><strong>Kids first.</strong> Nothing pushy: no pop-ups, no ads, and support requests only where parents look.</li>
+          <li><strong>Honest numbers.</strong> Ratings come straight from US Chess, and anything estimated is labeled as an estimate.</li>
+          <li><strong>More kids playing chess.</strong> Making the next tournament easy to find and every bit of progress easy to see, so kids keep playing and chess keeps growing in the US.</li>
+        </ul>
+      </div>
+    </details>`
 }
