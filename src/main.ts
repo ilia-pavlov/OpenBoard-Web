@@ -72,7 +72,7 @@ startRouter(
   [
     { pattern: /^\/$/, view: myCardView, tab: 'card' },
     { pattern: /^\/search$/, view: searchView, tab: 'search' },
-    { pattern: /^\/about$/, view: aboutView },
+    { pattern: /^\/about$/, view: aboutView, tab: 'about' },
     { pattern: /^\/thanks$/, view: thanksView },
     { pattern: /^\/player\/(\d{8})$/, view: profileView, tab: 'search' },
     { pattern: /^\/player\/(\d{8})\/history$/, view: historyView, tab: 'search' },

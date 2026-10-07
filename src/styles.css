@@ -886,3 +886,11 @@ a.tournament-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(-
 .ideology-body h2 { margin: 0; font-size: 18px; }
 .ideology-body ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 15px; line-height: 1.5; color: var(--text-2); }
 .ideology-body li strong { color: var(--text); }
+
+/* MARK: Header: OpenBoard as a tab, and the ideology link */
+
+.brand { padding: 6px 12px; margin-left: -12px; border-radius: 999px; transition: background 0.15s ease, color 0.15s ease; }
+.brand[aria-current] { color: var(--gold); background: color-mix(in srgb, var(--gold) 14%, transparent); }
+.brand[aria-current] .brand-info { color: var(--gold); }
+.header-link { font-size: 14px; font-weight: 600; color: var(--text-2); white-space: nowrap; }
+.header-link:hover { color: var(--gold); }

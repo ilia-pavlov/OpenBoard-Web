@@ -2,6 +2,7 @@
 // brand in the header.
 
 import type { View } from '../router'
+import { replaceQuery } from '../router'
 import { supportCard, supportLink } from '../donate'
 import { chevron, prefs } from '../ui'
 
@@ -14,7 +15,7 @@ const features: { icon: string; title: string; text: string; href: string }[] = 
   { icon: '⌕', title: 'Look anyone up', text: 'Search any US Chess player by name or member ID, or a tournament by event ID.', href: '#/search' },
 ]
 
-export const aboutView: View = ({ root }) => {
+export const aboutView: View = ({ root, params }) => {
   document.title = 'About · OpenBoard'
   const myCard = prefs.primary ? `#/player/${prefs.primary}` : '#/search'
   root.innerHTML = `
@@ -84,4 +85,13 @@ export const aboutView: View = ({ root }) => {
         </ul>
       </div>
     </details>`
+
+  // From the header's "Our ideology" link: open it and bring it into view. The
+  // query is dropped so the link works again on the next tap.
+  if (params.get('ideology')) {
+    const ideology = root.querySelector<HTMLDetailsElement>('.ideology')!
+    ideology.open = true
+    requestAnimationFrame(() => ideology.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+    replaceQuery(new URLSearchParams())
+  }
 }
