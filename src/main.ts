@@ -1,7 +1,7 @@
 import './styles.css'
 import { startRouter } from './router'
 import { startBadges } from './toplists'
-import { emptyState } from './ui'
+import { emptyState, prefs } from './ui'
 import { aboutView } from './views/about'
 import { thanksView } from './views/thanks'
 import { crosstableView } from './views/crosstable'
@@ -57,6 +57,10 @@ applyAppearance(currentAppearance())
 
 // Opened from a share link (/p/…, /e/…, /t/…): go to that screen.
 openSharedLink()
+
+// A first visit (plain openboard.online, nobody watched yet) starts on the
+// OpenBoard page. Only on load: tapping My Card still shows My Card.
+if (!location.hash && !prefs.primary) history.replaceState(null, '', '#/about')
 
 const app = document.getElementById('app')!
 startBadges(app)
