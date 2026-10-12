@@ -455,25 +455,56 @@ main {
 }
 .segmented button[aria-checked='true'] { background: var(--card); color: var(--text); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15); }
 
-.chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+/* Filter chips: one glass capsule like the phone tab bar; a set filter sits
+   in a soft pill, gold. */
+.chips {
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff calc(45% - 35% * var(--glow)), transparent),
+    0 6px 20px rgba(0, 0, 0, calc(0.06 + 0.2 * var(--glow)));
+}
 .chip {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 8px 10px;
+  padding: 9px 8px;
   border-radius: 999px;
-  border: 1px solid var(--hairline);
-  background: var(--card);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
-  color: var(--text-2);
+  color: var(--text);
+  /* Sized by its text, so a short "50 mi" leaves room for "This weekend". */
+  flex: 1 1 auto;
   min-width: 0;
+  transition: background 0.2s ease, color 0.2s ease;
 }
-.chip:focus-within { outline: 2px solid var(--gold); outline-offset: 2px; }
-.chip.active { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 50%, transparent); background: color-mix(in srgb, var(--gold) 12%, var(--card)); }
+.chip:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+.chip:focus-within { outline: 2px solid var(--gold); outline-offset: -2px; }
+.chip.active { color: var(--gold); background: color-mix(in srgb, var(--text) 8%, transparent); }
+.chip-icon { width: 18px; height: 18px; flex: none; }
+/* Phones: a little tighter, so three set filters ("50 mi · This weekend · Scholastic") fit. */
+@media (max-width: 420px) {
+  .chip { gap: 4px; padding: 9px 6px; font-size: 14px; }
+  .chip-icon { width: 16px; height: 16px; }
+}
 .chip-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip::after {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 1px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  opacity: 0.8;
+}
 .chip select { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
 
 .summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; }
@@ -719,7 +750,6 @@ a.event-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(--hair
 /* MARK: Top 100 */
 
 .segmented.three { grid-template-columns: repeat(3, 1fr); }
-.chips.two { grid-template-columns: repeat(2, 1fr); }
 
 .top-badge-slot:empty { display: none; }
 .top-badge-slot.all { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-top: -6px; }
