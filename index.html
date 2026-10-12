@@ -35,10 +35,11 @@
         <!-- People counted over the last 30 days; filled in once there are 100 or more. Opens the sheet below. -->
         <button class="visitors" type="button" popovertarget="visitors-sheet" hidden></button>
         <nav class="tabs" aria-label="Main">
-          <a href="#/" data-tab="card"><span class="tab-icon" aria-hidden="true">♛</span>My Card</a>
-          <a href="#/events" data-tab="events"><span class="tab-icon" aria-hidden="true">▦</span>Events</a>
-          <a href="#/search" data-tab="search"><span class="tab-icon" aria-hidden="true">⌕</span>Search</a>
-          <a href="#/watching" data-tab="watching"><span class="tab-icon" aria-hidden="true">♥</span>Watching</a>
+          <!-- Same order and icons as the iOS app's tab bar (crown, magnifier, trophy, heart). -->
+          <a href="#/" data-tab="card"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3.6 8.4a1.6 1.6 0 1 1 1.5-2.1l3.3 3.1 2.2-4.6a1.6 1.6 0 1 1 2.8 0l2.2 4.6 3.3-3.1a1.6 1.6 0 1 1 1.5 2.1L18.8 16H5.2zM5.4 17.4h13.2v1.5a1.1 1.1 0 0 1-1.1 1.1H6.5a1.1 1.1 0 0 1-1.1-1.1z"/></svg>My Card</a>
+          <a href="#/search" data-tab="search"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.3" cy="10.3" r="6.3" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M15 15l5.4 5.4" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></svg>Search</a>
+          <a href="#/events" data-tab="events"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.5 3h11v1.6h3a.9.9 0 0 1 .9.9v1.2a4.6 4.6 0 0 1-4.3 4.6 5.6 5.6 0 0 1-3.7 3.2V17h2.1a1.6 1.6 0 0 1 1.6 1.6V21H6.9v-2.4A1.6 1.6 0 0 1 8.5 17h2.1v-2.5a5.6 5.6 0 0 1-3.7-3.2 4.6 4.6 0 0 1-4.3-4.6V5.5a.9.9 0 0 1 .9-.9h3zm11 3.3v1.9a5.7 5.7 0 0 1-.2 1.4 2.8 2.8 0 0 0 2.4-2.8v-.5zm-11 0H4.3v.5a2.8 2.8 0 0 0 2.4 2.8 5.7 5.7 0 0 1-.2-1.4z"/></svg>Events</a>
+          <a href="#/watching" data-tab="watching"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 20.6s-8.6-5.1-8.6-11.2A4.9 4.9 0 0 1 12 6.3a4.9 4.9 0 0 1 8.6 3.1c0 6.1-8.6 11.2-8.6 11.2z"/></svg>Watching</a>
         </nav>
         <button class="appearance" type="button" aria-label="Appearance"></button>
       </div>

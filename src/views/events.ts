@@ -58,9 +58,9 @@ export const eventsView: View = ({ root, params, signal }) => {
     body().innerHTML = `
       ${state.editingLocation ? locationForm(location?.origin) : locationRow(location?.origin)}
       <div class="chips">
-        ${chip('radius', '◎', true, `${radius} mi`, radii.map((r) => [String(r), `Within ${r} mi`]), String(radius))}
-        ${chip('when', '◷', state.when !== 'any', state.when === 'any' ? 'When' : windows[state.when], Object.entries(windows), state.when)}
-        ${chip('type', '♞', state.kind !== 'any', state.kind === 'any' ? 'Type' : kinds[state.kind], Object.entries(kinds), state.kind)}
+        ${chip('radius', chipIcons.radius, true, `${radius} mi`, radii.map((r) => [String(r), `Within ${r} mi`]), String(radius))}
+        ${chip('when', chipIcons.when, state.when !== 'any', state.when === 'any' ? 'When' : shortWindows[state.when], Object.entries(windows), state.when)}
+        ${chip('type', chipIcons.type, state.kind !== 'any', state.kind === 'any' ? 'Type' : kinds[state.kind], Object.entries(kinds), state.kind)}
       </div>
       <div class="results"></div>`
     if (location) loadListings(location.origin, radius)
@@ -227,9 +227,19 @@ export const eventsView: View = ({ root, params, signal }) => {
   }
 }
 
+/** "When" on the chip itself, short so three set filters fit a phone; the list keeps the full wording. */
+const shortWindows: Record<keyof typeof windows, string> = { any: 'When', weekend: 'Weekend', month: '30 days', threeMonths: '3 months' }
+
+/** Filter icons, filled like the tab bar's: location arrow, calendar, chessboard. */
+const chipIcons = {
+  radius: `<svg class="chip-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="2"/><path fill="currentColor" d="M16.6 7.4l-3.1 9.3a.6.6 0 0 1-1.1 0l-1.3-3.8-3.8-1.3a.6.6 0 0 1 0-1.1z"/></svg>`,
+  when: `<svg class="chip-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M7 2.5h2V4h6V2.5h2V4h1.5A2.5 2.5 0 0 1 21 6.5v12a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 18.5v-12A2.5 2.5 0 0 1 5.5 4H7zM5 9v9.5c0 .3.2.5.5.5h13c.3 0 .5-.2.5-.5V9zm2 2h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2zm-8 4h2v2H7zm4 0h2v2h-2z"/></svg>`,
+  type: `<svg class="chip-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2v3.5h3.5V5zm7 0v3.5h3.5V5zM8.5 8.5V12H12V8.5zm7 0V12H19V8.5zM5 12v3.5h3.5V12zm7 0v3.5h3.5V12zm-3.5 3.5V19H12v-3.5zm7 0V19H19v-3.5z"/></svg>`,
+}
+
 function chip(key: string, icon: string, active: boolean, title: string, options: [string, string][], value: string): string {
   return `<label class="chip${active ? ' active' : ''}">
-    <span aria-hidden="true">${icon}</span><span class="chip-text">${esc(title)}</span>
+    ${icon}<span class="chip-text">${esc(title)}</span>
     <select data-filter="${key}" aria-label="${key === 'radius' ? 'Distance' : key === 'when' ? 'When' : 'Type'}">
       ${options.map(([k, label]) => `<option value="${esc(k)}"${k === value ? ' selected' : ''}>${esc(label)}</option>`).join('')}
     </select>

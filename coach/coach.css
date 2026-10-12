@@ -20,8 +20,8 @@ body.coach main {
   gap: 16px;
   padding: 12px 24px;
   background: color-mix(in srgb, var(--bg) 90%, transparent);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--hairline);
 }
 .coach-brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; }

@@ -14,8 +14,9 @@ main:focus, main:focus-visible { outline: none; }
   gap: 12px;
   padding: max(10px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left));
   background: color-mix(in srgb, var(--bg) 82%, transparent);
-  backdrop-filter: saturate(1.6) blur(18px);
+  /* Prefixed first: the minifier keeps only the last of the pair. */
   -webkit-backdrop-filter: saturate(1.6) blur(18px);
+  backdrop-filter: saturate(1.6) blur(18px);
   border-bottom: 1px solid var(--hairline);
 }
 
@@ -119,36 +120,46 @@ main:focus, main:focus-visible { outline: none; }
 }
 .capsule .appearance:hover { background: color-mix(in srgb, var(--gold) 22%, transparent); }
 
-/* Phones: the tabs move to a bottom bar, like the app's tab bar. */
+/* Phones: the tabs float at the bottom as a glass capsule, like the iOS
+   app's tab bar; the current tab sits in a soft pill, gold. */
 @media (max-width: 640px) {
   /* A blurred header would become the bar's containing block and pin it to the header. */
-  .topbar { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--bg); }
-  .tabs {
+  .topbar { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--bg); }
+  .capsule .tabs {
     position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    left: max(12px, env(safe-area-inset-left));
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(10px, env(safe-area-inset-bottom));
     z-index: 10;
     margin: 0;
-    gap: 0;
-    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
-    background: color-mix(in srgb, var(--bg) 86%, transparent);
-    backdrop-filter: saturate(1.6) blur(18px);
-    -webkit-backdrop-filter: saturate(1.6) blur(18px);
-    border-top: 1px solid var(--hairline);
+    gap: 2px;
+    padding: 5px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--card) 88%, transparent);
+    /* Prefixed first: the minifier keeps only the last of the pair. */
+    -webkit-backdrop-filter: saturate(1.8) blur(30px);
+    backdrop-filter: saturate(1.8) blur(30px);
+    border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, #fff calc(45% - 35% * var(--glow)), transparent),
+      0 10px 30px rgba(0, 0, 0, calc(0.12 + 0.28 * var(--glow)));
   }
   .tabs a {
     flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
-    padding: 4px 0;
-    border-radius: 10px;
-    font-size: 11px;
+    gap: 3px;
+    padding: 7px 0 6px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    transition: background 0.2s ease, color 0.2s ease;
   }
-  .tabs a[aria-current] { background: none; }
-  .tab-icon { display: block; font-size: 20px; line-height: 1.1; }
+  .tabs a:hover { color: var(--text); }
+  .tabs a[aria-current] { color: var(--gold); background: color-mix(in srgb, var(--text) 8%, transparent); }
+  .tab-icon { display: block; width: 26px; height: 26px; }
   .tabs + .appearance { margin-left: auto; }
   /* The tabs leave for the bottom bar; the appearance button keeps the right end. */
   .capsule .appearance { margin-left: auto; }
@@ -205,8 +216,8 @@ main {
 .glass {
   background: var(--glass);
   border: 1px solid var(--glass-edge);
-  backdrop-filter: blur(24px) saturate(1.4);
   -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  backdrop-filter: blur(24px) saturate(1.4);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, calc(0.06 + 0.5 * (1 - var(--glow)))), 0 8px 30px rgba(0, 0, 0, calc(0.05 + 0.25 * var(--glow)));
 }
 
@@ -444,25 +455,56 @@ main {
 }
 .segmented button[aria-checked='true'] { background: var(--card); color: var(--text); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15); }
 
-.chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+/* Filter chips: one glass capsule like the phone tab bar; a set filter sits
+   in a soft pill, gold. */
+.chips {
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff calc(45% - 35% * var(--glow)), transparent),
+    0 6px 20px rgba(0, 0, 0, calc(0.06 + 0.2 * var(--glow)));
+}
 .chip {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 8px 10px;
+  padding: 9px 8px;
   border-radius: 999px;
-  border: 1px solid var(--hairline);
-  background: var(--card);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
-  color: var(--text-2);
+  color: var(--text);
+  /* Sized by its text, so a short "50 mi" leaves room for "This weekend". */
+  flex: 1 1 auto;
   min-width: 0;
+  transition: background 0.2s ease, color 0.2s ease;
 }
-.chip:focus-within { outline: 2px solid var(--gold); outline-offset: 2px; }
-.chip.active { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 50%, transparent); background: color-mix(in srgb, var(--gold) 12%, var(--card)); }
+.chip:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+.chip:focus-within { outline: 2px solid var(--gold); outline-offset: -2px; }
+.chip.active { color: var(--gold); background: color-mix(in srgb, var(--text) 8%, transparent); }
+.chip-icon { width: 18px; height: 18px; flex: none; }
+/* Phones: a little tighter, so three set filters ("50 mi · This weekend · Scholastic") fit. */
+@media (max-width: 420px) {
+  .chip { gap: 4px; padding: 9px 6px; font-size: 14px; }
+  .chip-icon { width: 16px; height: 16px; }
+}
 .chip-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip::after {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 1px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  opacity: 0.8;
+}
 .chip select { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
 
 .summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; }
@@ -708,7 +750,6 @@ a.event-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(--hair
 /* MARK: Top 100 */
 
 .segmented.three { grid-template-columns: repeat(3, 1fr); }
-.chips.two { grid-template-columns: repeat(2, 1fr); }
 
 .top-badge-slot:empty { display: none; }
 .top-badge-slot.all { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-top: -6px; }
@@ -923,7 +964,7 @@ a.tournament-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(-
 
 /* Last, so it wins over the base main padding: room for the phone tab bar. */
 @media (max-width: 640px) {
-  main { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+  main { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
 }
 
 .alert-help { margin: 0; font-size: 13px; line-height: 1.45; color: var(--text-2); padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--gold) 8%, transparent); border: 1px solid color-mix(in srgb, var(--gold) 20%, transparent); }
