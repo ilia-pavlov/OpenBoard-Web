@@ -681,18 +681,28 @@ a.event-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(--hair
 .info-popover p { margin: 0; }
 .info-popover .button { margin-top: 12px; width: 100%; }
 
-/* The "monthly users" sheet: OpenBoard's number, then online chess for context. */
-.visitors-sheet { max-width: min(380px, calc(100vw - 32px)); }
-.visitors-sheet .sheet-body { display: flex; flex-direction: column; gap: 10px; }
+/* The "monthly users" sheet: grouped lists, gold for over the board and teal
+   for online. Label left, number right, detail and source underneath. */
+.visitors-sheet { width: min(360px, calc(100vw - 32px)); max-width: none; }
+.visitors-sheet .sheet-body { display: flex; flex-direction: column; gap: 14px; }
 .visitors-sheet h3 { margin: 0; }
-.sheet-hero { font-size: 17px; line-height: 1.35; }
-.sheet-hero strong { color: var(--gold); font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; display: block; line-height: 1.1; }
-.visitors-sheet .muted { color: var(--text-2); line-height: 1.45; }
-.visitors-sheet .section-label { margin: 6px 0 0; }
-.visitors-sheet ul.sheet-context { margin: 0; gap: 10px; }
-.sheet-context li { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--hairline); background: var(--bg); line-height: 1.35; }
-.sheet-num { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.sheet-context a { font-size: 12px; color: var(--gold); font-weight: 600; }
+.sheet-group { --tint: var(--gold); display: flex; flex-direction: column; gap: 6px; }
+.sheet-group.online { --tint: var(--teal); }
+.visitors-sheet .sheet-cap { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tint); }
+.sheet-box {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--tint) 38%, var(--hairline));
+  background: color-mix(in srgb, var(--tint) 8%, var(--bg));
+}
+.sheet-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: baseline; padding: 11px 12px; }
+.sheet-row + .sheet-row { border-top: 1px solid color-mix(in srgb, var(--tint) 22%, var(--hairline)); }
+.sheet-label { font-weight: 600; font-size: 15px; }
+.sheet-num { font-size: 17px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.otb .sheet-num { color: var(--gold); font-size: 20px; }
+.sheet-detail, .sheet-source { grid-column: 1 / -1; font-size: 12px; line-height: 1.4; }
+.sheet-detail { color: var(--text-2); }
+.sheet-source { color: var(--tint); font-weight: 600; justify-self: start; }
 .sheet-note { font-size: 12px; color: var(--text-2); line-height: 1.45; }
 
 /* MARK: Top 100 */

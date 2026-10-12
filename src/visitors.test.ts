@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { monthName, shouldCount, visitorsBadge, visitorsSheet } from './visitors'
+import { shouldCount, visitorsBadge, visitorsSheet } from './visitors'
 
 const day = 86_400_000
 
@@ -30,19 +30,26 @@ describe('visitorsBadge', () => {
 })
 
 describe('visitorsSheet', () => {
-  it('names the month', () => {
-    expect(monthName('2026-09')).toBe('September 2026')
+  const sheet = visitorsSheet({ visitors30d: 1247, lichessBlitzWeek: 707912 })
+  const section = (cls: string) => sheet.slice(sheet.indexOf(`sheet-group ${cls}`)).split('</section>')[0]
+
+  it('puts OpenBoard alone in the over-the-board group', () => {
+    const otb = section('otb')
+    expect(otb).toContain('<span class="sheet-label">OpenBoard</span><span class="sheet-num">1,247</span>')
+    expect(otb).not.toContain('Lichess')
   })
 
-  it('shows OpenBoard, Lichess and Chess.com, each with its own measure', () => {
-    const html = visitorsSheet({ visitors30d: 1247, lichess: { month: '2026-09', games: 89616462 } })
-    expect(html).toContain('<strong>1,247</strong> people used OpenBoard in the last 30 days')
-    expect(html).toContain('89,616,462</span><span>rated games on <strong>Lichess</strong> in September 2026')
-    expect(html).toContain('9,700,000</span><span>people a day on <strong>Chess.com</strong>')
-    expect(html).toContain("can't be compared directly")
+  it('puts Lichess and Chess.com in the online group, each with its measure and source', () => {
+    const online = section('online')
+    expect(online).toContain('<span class="sheet-label">Lichess</span><span class="sheet-num">707,912</span>')
+    expect(online).toContain('blitz players this week')
+    expect(online).toContain('<span class="sheet-label">Chess.com</span><span class="sheet-num">9,700,000</span>')
+    expect(online).toContain('people a day, Q1 2026 average')
+    expect(online.match(/sheet-source/g)).toHaveLength(2)
+    expect(sheet).toContain("can't be compared directly")
   })
 
   it('leaves Lichess out when it could not be loaded', () => {
-    expect(visitorsSheet({ visitors30d: 500 })).not.toContain('Lichess</strong>')
+    expect(visitorsSheet({ visitors30d: 500 })).not.toContain('>Lichess<')
   })
 })

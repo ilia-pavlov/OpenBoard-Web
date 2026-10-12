@@ -8,7 +8,7 @@
 
 import { createTable, insertFeedback, parseFeedback } from './feedback'
 import { countVisit, visitorsLast30Days } from './visits'
-import { type LichessMonth, latestLichessMonth, lichessCountsURL } from './context'
+import { blitzPlayersThisWeek, lichessBlitzURL } from './context'
 import { type Preview, type ShareLink, eventPreview, metaTags, parseShareLink, playerPreview, tournamentPreview } from './preview'
 import { type Upstream, canonicalRedirect, upstreamFor, userAgent } from './relay'
 
@@ -105,30 +105,40 @@ async function recordVisit(request: Request, url: URL, env: Env): Promise<Respon
 /** How long the 30-day count is reused before D1 is asked again. */
 const statsTTL = 600
 
-/** Rated games on Lichess last month; the file changes monthly, so Cloudflare keeps it a day. */
-async function lichessLastMonth(): Promise<LichessMonth | undefined> {
+/** Blitz players on Lichess this week; Cloudflare keeps the page for a day. */
+async function lichessBlitzWeek(): Promise<number | undefined> {
   try {
-    const response = await fetch(lichessCountsURL, {
+    const response = await fetch(lichessBlitzURL, {
       headers: { 'User-Agent': userAgent },
       signal: AbortSignal.timeout(4_000),
       cf: { cacheTtl: 86_400, cacheEverything: true },
     })
-    return response.ok ? latestLichessMonth(await response.text()) : undefined
+    return response.ok ? blitzPlayersThisWeek(await response.text()) : undefined
   } catch {
     return undefined
   }
 }
 
-/** `{ visitors30d, lichess }` for the header badge and its sheet, cached at the edge for a few minutes. */
+/**
+ * `{ visitors30d, lichessBlitzWeek }` for the header badge and its sheet,
+ * cached at the edge for a few minutes. Browsers always ask again (the edge
+ * answers quickly), so a new field never hides behind an old browser copy.
+ */
 async function stats(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const cache = caches.default
   const cacheKey = new Request(new URL('/api/stats', request.url))
   const cached = await cache.match(cacheKey)
-  if (cached) return cached
-  const [visitors30d, lichess] = await Promise.all([visitorsLast30Days(env.DB), lichessLastMonth()])
-  const response = Response.json({ visitors30d, lichess }, { headers: { 'Cache-Control': `public, max-age=${statsTTL}` } })
-  ctx.waitUntil(cache.put(cacheKey, response.clone()))
-  return response
+  if (cached) {
+    const hit = new Response(cached.body, cached)
+    hit.headers.set('Cache-Control', 'no-cache')
+    return hit
+  }
+  const [visitors30d, lichessBlitzWeekCount] = await Promise.all([visitorsLast30Days(env.DB), lichessBlitzWeek()])
+  const body = { visitors30d, lichessBlitzWeek: lichessBlitzWeekCount }
+  // A failed Lichess lookup is retried after a minute instead of ten.
+  const ttl = lichessBlitzWeekCount ? statsTTL : 60
+  ctx.waitUntil(cache.put(cacheKey, Response.json(body, { headers: { 'Cache-Control': `public, max-age=${ttl}` } })))
+  return Response.json(body, { headers: { 'Cache-Control': 'no-cache' } })
 }
 
 /** The relay path holding a share link's data, and how to turn it into a preview. */

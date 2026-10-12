@@ -42,8 +42,8 @@ export function visitorsBadge(count: number): string {
 
 export interface Stats {
   visitors30d: number
-  /** Rated games on Lichess in its latest published month, when it could be loaded. */
-  lichess?: { month: string; games: number }
+  /** People who played rated blitz on Lichess this week, when it could be loaded. */
+  lichessBlitzWeek?: number
 }
 
 /**
@@ -56,37 +56,43 @@ export const chessCom = {
   source: 'https://www.chess.com/board-reports/2026-q1',
 } as const
 
-/** "2026-09" → "September 2026". */
-export const monthName = (month: string) =>
-  new Date(`${month}-01T12:00:00Z`).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+const lichessSource = 'https://lichess.org/stat/rating/distribution/blitz'
 
-/** The sheet that opens from the badge: OpenBoard's number, then online chess for context. */
+const row = (label: string, value: number, detail: string, source?: [string, string]) => `<div class="sheet-row">
+    <span class="sheet-label">${label}</span><span class="sheet-num">${num(value)}</span>
+    <span class="sheet-detail">${detail}</span>
+    ${source ? `<a class="sheet-source" href="${source[0]}" target="_blank" rel="noopener">${source[1]} ↗</a>` : ''}
+  </div>`
+
+/**
+ * The sheet that opens from the badge: two grouped lists, a gold "Over the
+ * board" group with OpenBoard and a teal "Online" group for context. Label on
+ * the left, number on the right, detail and source underneath.
+ */
 export function visitorsSheet(stats: Stats): string {
-  const lichess = stats.lichess
   return `<h3>Monthly users</h3>
-    <p class="sheet-hero"><strong>${num(stats.visitors30d)}</strong> people used OpenBoard in the last 30 days.</p>
-    <p class="muted">Parents and players finding <strong>over-the-board</strong> tournaments and following US Chess ratings.</p>
-    <h4 class="section-label">For context: online chess</h4>
-    <ul class="sheet-context">
-      ${
-        lichess
-          ? `<li><span class="sheet-num">${num(lichess.games)}</span><span>rated games on <strong>Lichess</strong> in ${monthName(lichess.month)}</span>
-              <a href="https://database.lichess.org/" target="_blank" rel="noopener">Lichess open database</a></li>`
-          : ''
-      }
-      <li><span class="sheet-num">${num(chessCom.dailyActive)}</span><span>people a day on <strong>Chess.com</strong> (average, ${chessCom.period})</span>
-        <a href="${chessCom.source}" target="_blank" rel="noopener">Chess.com board report</a></li>
-    </ul>
-    <p class="sheet-note">These measure different things: OpenBoard counts people per month, Lichess counts games per month and Chess.com counts people per day, so they can't be compared directly.</p>`
+    <section class="sheet-group otb">
+      <h4 class="sheet-cap">♛ Over the board</h4>
+      <div class="sheet-box">${row('OpenBoard', stats.visitors30d, 'people in the last 30 days, finding tournaments and following US Chess ratings')}</div>
+    </section>
+    <section class="sheet-group online">
+      <h4 class="sheet-cap">Online, for context</h4>
+      <div class="sheet-box">
+        ${stats.lichessBlitzWeek ? row('Lichess', stats.lichessBlitzWeek, 'blitz players this week', [lichessSource, 'Lichess stats']) : ''}
+        ${row('Chess.com', chessCom.dailyActive, `people a day, ${chessCom.period} average`, [chessCom.source, 'Chess.com board report'])}
+      </div>
+    </section>
+    <p class="sheet-note">Different time spans: people per month, per week and per day, so they can't be compared directly.</p>`
 }
 
 /** OpenBoard's numbers and the online context (count 0 if they can't be loaded). */
 async function loadStats(): Promise<Stats> {
   try {
-    const r = await fetch('/api/stats')
+    // The Worker's edge cache keeps this fast; skip the browser's copy so new numbers show.
+    const r = await fetch('/api/stats', { cache: 'no-store' })
     if (!r.ok) return { visitors30d: 0 }
     const json = (await r.json()) as Partial<Stats>
-    return { visitors30d: Number(json.visitors30d) || 0, lichess: json.lichess }
+    return { visitors30d: Number(json.visitors30d) || 0, lichessBlitzWeek: Number(json.lichessBlitzWeek) || undefined }
   } catch {
     return { visitors30d: 0 }
   }
