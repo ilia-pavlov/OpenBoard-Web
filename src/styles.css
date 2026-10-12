@@ -48,24 +48,69 @@ main:focus, main:focus-visible { outline: none; }
 .appearance { margin-left: auto; }
 .tabs + .appearance { margin-left: 0; }
 
-/* Monthly users: a people icon and two lines, like the brand button. */
+/* MARK: Header capsule: OpenBoard | monthly users … tabs · appearance, in one
+   rounded bar. No backdrop-filter here: it would trap the phone tab bar. */
+
+.capsule {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  height: 48px;
+  padding: 0 6px 0 6px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: var(--card);
+}
+.capsule .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 10px 0 8px;
+  border-radius: 999px;
+  line-height: 1.1;
+  white-space: nowrap;
+  flex: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.capsule .brand:hover { background: color-mix(in srgb, var(--gold) 8%, transparent); }
+.capsule .brand[aria-current] { color: var(--gold); background: color-mix(in srgb, var(--gold) 12%, transparent); }
+.capsule .brand[aria-current] .brand-sub { color: var(--gold); }
+.capsule .brand-mark { font-size: 19px; }
+.brand-text { display: flex; flex-direction: column; align-items: flex-start; }
+.brand-name { font-weight: 700; font-size: 15px; }
+.brand-sub { font-size: 11px; font-weight: 600; color: var(--text-2); letter-spacing: 0.01em; }
+
+/* Monthly users, after a thin divider. */
 .visitors {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 12px 4px 5px;
-  border-radius: 14px;
-  border: 1px solid color-mix(in srgb, var(--gold) 30%, var(--hairline));
-  background: var(--card);
+  gap: 7px;
+  margin-left: 4px;
+  padding-left: 12px;
+  border-left: 1px solid var(--hairline);
   white-space: nowrap;
   flex: none;
 }
 .visitors[hidden] { display: none; }
-.visitors-icon { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--gold) 18%, transparent); color: var(--gold); }
+.visitors-icon { display: grid; place-items: center; color: var(--gold); }
 .visitors-icon svg { width: 16px; height: 16px; }
 .visitors-text { display: flex; flex-direction: column; line-height: 1.1; }
 .visitors strong { color: var(--gold); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .visitors small { font-size: 11px; font-weight: 600; color: var(--text-2); }
+
+.capsule .tabs { margin: 0 6px 0 auto; }
+.capsule .appearance {
+  width: 36px;
+  height: 36px;
+  margin-left: 0;
+  flex: none;
+  border: 0;
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 14%, transparent);
+}
+.capsule .appearance:hover { background: color-mix(in srgb, var(--gold) 22%, transparent); }
 
 /* Phones: the tabs move to a bottom bar, like the app's tab bar. */
 @media (max-width: 640px) {
@@ -98,8 +143,17 @@ main:focus, main:focus-visible { outline: none; }
   .tabs a[aria-current] { background: none; }
   .tab-icon { display: block; font-size: 20px; line-height: 1.1; }
   .tabs + .appearance { margin-left: auto; }
-  /* Centered between the brand and the appearance button. */
-  .visitors { margin-left: auto; }
+  /* The tabs leave for the bottom bar; the appearance button keeps the right end. */
+  .capsule .appearance { margin-left: auto; }
+}
+
+/* The smallest phones (iPhone SE, 320px): tighter spacing so nothing overlaps. */
+@media (max-width: 359px) {
+  .topbar { padding-left: max(10px, env(safe-area-inset-left)); padding-right: max(10px, env(safe-area-inset-right)); }
+  .capsule { padding: 0 4px; }
+  .capsule .brand { gap: 5px; padding: 0 6px 0 5px; }
+  .visitors { gap: 5px; margin-left: 2px; padding-left: 8px; }
+  .capsule .appearance { width: 34px; height: 34px; }
 }
 
 /* MARK: Layout */
@@ -889,8 +943,6 @@ a.tournament-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(-
 
 /* MARK: Ways to About */
 
-.brand-info { margin-left: 6px; font-size: 15px; font-weight: 400; color: var(--text-2); transition: color 0.15s ease; }
-.brand:hover .brand-info, .brand:focus-visible .brand-info { color: var(--gold); }
 .card-footer-links { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 8px 0 4px; font-size: 14px; color: var(--text-3); }
 .card-footer-links a { color: var(--gold); font-weight: 600; }
 
@@ -905,29 +957,6 @@ a.tournament-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(-
 .ideology-body h2 { margin: 0; font-size: 18px; }
 .ideology-body ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 15px; line-height: 1.5; color: var(--text-2); }
 .ideology-body li strong { color: var(--text); }
-
-/* MARK: Header: OpenBoard as one two-line button (About · our ideology) */
-
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 12px 4px 10px;
-  margin-left: -4px;
-  border-radius: 14px;
-  border: 1px solid var(--hairline);
-  background: var(--card);
-  font-size: 16px;
-  line-height: 1.1;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-.brand:hover { border-color: color-mix(in srgb, var(--gold) 50%, var(--hairline)); }
-.brand-text { display: flex; flex-direction: column; align-items: flex-start; }
-.brand-name { font-weight: 700; font-size: 16px; }
-.brand-sub { font-size: 11px; font-weight: 600; color: var(--text-2); letter-spacing: 0.01em; }
-.brand-info { margin-left: 2px; }
-.brand[aria-current] { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 55%, transparent); background: color-mix(in srgb, var(--gold) 12%, var(--card)); }
-.brand[aria-current] .brand-sub, .brand[aria-current] .brand-info { color: var(--gold); }
 
 /* MARK: Coaches invitation (About) */
 
