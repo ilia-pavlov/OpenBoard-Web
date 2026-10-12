@@ -32,8 +32,8 @@
           <span class="brand-mark">♛</span>
           <span class="brand-text"><span class="brand-name">OpenBoard</span><span class="brand-sub">About · ideology</span></span>
         </a>
-        <!-- People counted over the last 30 days; filled in once there are 100 or more. -->
-        <span class="visitors" role="img" hidden></span>
+        <!-- People counted over the last 30 days; filled in once there are 100 or more. Opens the sheet below. -->
+        <button class="visitors" type="button" popovertarget="visitors-sheet" hidden></button>
         <nav class="tabs" aria-label="Main">
           <a href="#/" data-tab="card"><span class="tab-icon" aria-hidden="true">♛</span>My Card</a>
           <a href="#/events" data-tab="events"><span class="tab-icon" aria-hidden="true">▦</span>Events</a>
@@ -43,6 +43,10 @@
         <button class="appearance" type="button" aria-label="Appearance"></button>
       </div>
     </header>
+    <div id="visitors-sheet" class="info-popover card visitors-sheet" popover>
+      <div class="sheet-body"></div>
+      <button class="button" type="button" popovertarget="visitors-sheet" popovertargetaction="hide">Got it</button>
+    </div>
     <main id="app" tabindex="-1"></main>
     <script type="module" src="/src/main.ts"></script>
   </body>

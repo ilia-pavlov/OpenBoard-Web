@@ -8,6 +8,7 @@
 
 import { createTable, insertFeedback, parseFeedback } from './feedback'
 import { countVisit, visitorsLast30Days } from './visits'
+import { type LichessMonth, latestLichessMonth, lichessCountsURL } from './context'
 import { type Preview, type ShareLink, eventPreview, metaTags, parseShareLink, playerPreview, tournamentPreview } from './preview'
 import { type Upstream, canonicalRedirect, upstreamFor, userAgent } from './relay'
 
@@ -104,16 +105,28 @@ async function recordVisit(request: Request, url: URL, env: Env): Promise<Respon
 /** How long the 30-day count is reused before D1 is asked again. */
 const statsTTL = 600
 
-/** `{ visitors30d }` for the About page, cached at the edge for a few minutes. */
+/** Rated games on Lichess last month; the file changes monthly, so Cloudflare keeps it a day. */
+async function lichessLastMonth(): Promise<LichessMonth | undefined> {
+  try {
+    const response = await fetch(lichessCountsURL, {
+      headers: { 'User-Agent': userAgent },
+      signal: AbortSignal.timeout(4_000),
+      cf: { cacheTtl: 86_400, cacheEverything: true },
+    })
+    return response.ok ? latestLichessMonth(await response.text()) : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/** `{ visitors30d, lichess }` for the header badge and its sheet, cached at the edge for a few minutes. */
 async function stats(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const cache = caches.default
   const cacheKey = new Request(new URL('/api/stats', request.url))
   const cached = await cache.match(cacheKey)
   if (cached) return cached
-  const response = Response.json(
-    { visitors30d: await visitorsLast30Days(env.DB) },
-    { headers: { 'Cache-Control': `public, max-age=${statsTTL}` } },
-  )
+  const [visitors30d, lichess] = await Promise.all([visitorsLast30Days(env.DB), lichessLastMonth()])
+  const response = Response.json({ visitors30d, lichess }, { headers: { 'Cache-Control': `public, max-age=${statsTTL}` } })
   ctx.waitUntil(cache.put(cacheKey, response.clone()))
   return response
 }

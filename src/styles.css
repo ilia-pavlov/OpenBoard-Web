@@ -88,12 +88,19 @@ main:focus, main:focus-visible { outline: none; }
   align-items: center;
   gap: 7px;
   margin-left: 4px;
-  padding-left: 12px;
+  padding: 0 4px 0 12px;
+  border: 0;
   border-left: 1px solid var(--hairline);
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
   white-space: nowrap;
   flex: none;
 }
 .visitors[hidden] { display: none; }
+.visitors:hover small { color: var(--gold); }
 .visitors-icon { display: grid; place-items: center; color: var(--gold); }
 .visitors-icon svg { width: 16px; height: 16px; }
 .visitors-text { display: flex; flex-direction: column; line-height: 1.1; }
@@ -673,6 +680,20 @@ a.event-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(--hair
 .info-popover ul { padding: 0; margin: 10px 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
 .info-popover p { margin: 0; }
 .info-popover .button { margin-top: 12px; width: 100%; }
+
+/* The "monthly users" sheet: OpenBoard's number, then online chess for context. */
+.visitors-sheet { max-width: min(380px, calc(100vw - 32px)); }
+.visitors-sheet .sheet-body { display: flex; flex-direction: column; gap: 10px; }
+.visitors-sheet h3 { margin: 0; }
+.sheet-hero { font-size: 17px; line-height: 1.35; }
+.sheet-hero strong { color: var(--gold); font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; display: block; line-height: 1.1; }
+.visitors-sheet .muted { color: var(--text-2); line-height: 1.45; }
+.visitors-sheet .section-label { margin: 6px 0 0; }
+.visitors-sheet ul.sheet-context { margin: 0; gap: 10px; }
+.sheet-context li { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--hairline); background: var(--bg); line-height: 1.35; }
+.sheet-num { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.sheet-context a { font-size: 12px; color: var(--gold); font-weight: 600; }
+.sheet-note { font-size: 12px; color: var(--text-2); line-height: 1.45; }
 
 /* MARK: Top 100 */
 

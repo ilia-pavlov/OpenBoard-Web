@@ -1,6 +1,7 @@
-// "1,247 monthly users" in the header. This browser
-// asks to be counted at most once per 30 days, remembered on this device
-// only; the server keeps just a number per day (see worker/visits.ts).
+// "1,247 monthly users" in the header; tapping it opens a sheet that puts the
+// number next to online chess for context. This browser asks to be counted
+// at most once per 30 days, remembered on this device only; the server keeps
+// just a number per day (see worker/visits.ts).
 
 import { num } from './ui'
 
@@ -39,23 +40,66 @@ export function visitorsBadge(count: number): string {
   return `<span class="visitors-icon">${peopleIcon}</span><span class="visitors-text"><strong>${num(count)}</strong><small>monthly users</small></span>`
 }
 
-/** People counted over the last 30 days (0 if it can't be loaded). */
-async function visitorsLast30Days(): Promise<number> {
+export interface Stats {
+  visitors30d: number
+  /** Rated games on Lichess in its latest published month, when it could be loaded. */
+  lichess?: { month: string; games: number }
+}
+
+/**
+ * Chess.com publishes daily active users in its quarterly board reports (a web
+ * page, no API). Update these by hand when a new report comes out.
+ */
+export const chessCom = {
+  dailyActive: 9_700_000,
+  period: 'Q1 2026',
+  source: 'https://www.chess.com/board-reports/2026-q1',
+} as const
+
+/** "2026-09" → "September 2026". */
+export const monthName = (month: string) =>
+  new Date(`${month}-01T12:00:00Z`).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+
+/** The sheet that opens from the badge: OpenBoard's number, then online chess for context. */
+export function visitorsSheet(stats: Stats): string {
+  const lichess = stats.lichess
+  return `<h3>Monthly users</h3>
+    <p class="sheet-hero"><strong>${num(stats.visitors30d)}</strong> people used OpenBoard in the last 30 days.</p>
+    <p class="muted">Parents and players finding <strong>over-the-board</strong> tournaments and following US Chess ratings.</p>
+    <h4 class="section-label">For context: online chess</h4>
+    <ul class="sheet-context">
+      ${
+        lichess
+          ? `<li><span class="sheet-num">${num(lichess.games)}</span><span>rated games on <strong>Lichess</strong> in ${monthName(lichess.month)}</span>
+              <a href="https://database.lichess.org/" target="_blank" rel="noopener">Lichess open database</a></li>`
+          : ''
+      }
+      <li><span class="sheet-num">${num(chessCom.dailyActive)}</span><span>people a day on <strong>Chess.com</strong> (average, ${chessCom.period})</span>
+        <a href="${chessCom.source}" target="_blank" rel="noopener">Chess.com board report</a></li>
+    </ul>
+    <p class="sheet-note">These measure different things: OpenBoard counts people per month, Lichess counts games per month and Chess.com counts people per day, so they can't be compared directly.</p>`
+}
+
+/** OpenBoard's numbers and the online context (count 0 if they can't be loaded). */
+async function loadStats(): Promise<Stats> {
   try {
     const r = await fetch('/api/stats')
-    return r.ok ? Number(((await r.json()) as { visitors30d?: number }).visitors30d) || 0 : 0
+    if (!r.ok) return { visitors30d: 0 }
+    const json = (await r.json()) as Partial<Stats>
+    return { visitors30d: Number(json.visitors30d) || 0, lichess: json.lichess }
   } catch {
-    return 0
+    return { visitors30d: 0 }
   }
 }
 
-/** Fills the header badge once the count is loaded and big enough. */
-export async function showVisitors(badge: HTMLElement) {
-  const count = await visitorsLast30Days()
-  const html = visitorsBadge(count)
+/** Fills the header badge and its sheet once the count is loaded and big enough. */
+export async function showVisitors(badge: HTMLElement, sheet: HTMLElement) {
+  const stats = await loadStats()
+  const html = visitorsBadge(stats.visitors30d)
   if (!html) return
   badge.innerHTML = html
-  badge.title = `${num(count)} people used OpenBoard in the last 30 days`
+  badge.title = `${num(stats.visitors30d)} people used OpenBoard in the last 30 days. Tap to compare with online chess.`
   badge.setAttribute('aria-label', badge.title)
+  sheet.querySelector('.sheet-body')!.innerHTML = visitorsSheet(stats)
   badge.hidden = false
 }

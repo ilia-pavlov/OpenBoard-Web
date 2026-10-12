@@ -69,7 +69,7 @@ startBadges(app)
 enableProvisionalInfo()
 registerServiceWorker()
 countThisVisit()
-showVisitors(document.querySelector<HTMLElement>('.visitors')!)
+showVisitors(document.querySelector<HTMLElement>('.visitors')!, document.getElementById('visitors-sheet')!)
 checkIfDue()
 startRouter(
   app,
