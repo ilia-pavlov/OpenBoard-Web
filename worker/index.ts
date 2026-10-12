@@ -2,8 +2,10 @@
 // Worker runs only for the page itself, share links (/p/…, /e/…, /t/…) and
 // /api/* (see run_worker_first in wrangler.jsonc). It sends other hostnames to
 // the canonical one, gives share links real link-preview tags, and relays
-// /api/* to US Chess with an edge cache in front.
+// /api/* to US Chess with an edge cache in front. POST /api/feedback saves the
+// "Send feedback" form to D1.
 
+import { createTable, insertFeedback, parseFeedback } from './feedback'
 import { type Preview, type ShareLink, eventPreview, metaTags, parseShareLink, playerPreview, tournamentPreview } from './preview'
 import { type Upstream, canonicalRedirect, upstreamFor, userAgent } from './relay'
 
@@ -66,6 +68,25 @@ async function fetchUpstream(upstream: Upstream, ctx: ExecutionContext, accept: 
   return new Response(response.body, { status: response.status, headers })
 }
 
+/** Saves a "Send feedback" form. Only this site's own pages may post it. */
+async function saveFeedback(request: Request, url: URL, env: Env): Promise<Response> {
+  const origin = request.headers.get('Origin')
+  if (!origin || URL.parse(origin)?.host !== url.host) return error(403, 'Send feedback from openboard.online.')
+  if (Number(request.headers.get('Content-Length') ?? 0) > 16_000) return error(413, 'That message is too long.')
+  const parsed = parseFeedback(await request.json().catch(() => null))
+  if ('error' in parsed) return error(400, parsed.error)
+  if ('spam' in parsed) return Response.json({ ok: true })
+  const { kind, message, contact } = parsed.feedback
+  try {
+    await env.FEEDBACK.batch([env.FEEDBACK.prepare(createTable), env.FEEDBACK.prepare(insertFeedback).bind(kind, message, contact)])
+  } catch (e) {
+    console.error(JSON.stringify({ message: 'saving feedback failed', error: String(e) }))
+    return error(500, "Couldn't save your message.")
+  }
+  console.log(JSON.stringify({ message: 'feedback received', kind }))
+  return Response.json({ ok: true }, { headers: { 'Cache-Control': 'no-store' } })
+}
+
 /** The relay path holding a share link's data, and how to turn it into a preview. */
 const previewSources: Record<ShareLink['kind'], (id: string) => [string, (json: never) => Preview | undefined]> = {
   player: (id) => [`/api/ratings/members/${id}`, playerPreview],
@@ -120,6 +141,9 @@ export default {
       return share ? sharePage(share, url, env, ctx) : env.ASSETS.fetch(request)
     }
 
+    if (url.pathname === '/api/feedback') {
+      return request.method === 'POST' ? saveFeedback(request, url, env) : error(405, 'Send feedback with POST.')
+    }
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return error(405, 'Only GET requests are relayed.')
     }

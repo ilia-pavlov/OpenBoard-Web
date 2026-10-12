@@ -957,3 +957,52 @@ a.tournament-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(-
 .join-row small { color: #4a3a12; }
 .join-row .browse-icon, .join-row .external { color: #1d1606; }
 .join-row:hover { filter: brightness(1.04); }
+
+/* MARK: Send feedback (#/feedback, and its card on About) */
+
+.feedback-form { display: flex; flex-direction: column; gap: 18px; padding: 18px; }
+.feedback-form .muted { color: var(--text-2); font-weight: 400; }
+.feedback-form small { font-size: 12px; }
+.feedback-kinds { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.feedback-kinds legend { padding: 0; margin-bottom: 8px; }
+.feedback-kind { position: relative; cursor: pointer; }
+.feedback-kind input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.feedback-kind span {
+  display: inline-flex;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: var(--bg);
+  font-size: 15px;
+  font-weight: 600;
+}
+.feedback-kind input:checked + span { color: var(--gold); border-color: var(--gold); background: color-mix(in srgb, var(--gold) 12%, var(--card)); }
+.feedback-kind input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: 2px; }
+.feedback-field { display: flex; flex-direction: column; gap: 6px; }
+.feedback-label { font-size: 15px; font-weight: 600; }
+.feedback-field textarea, .feedback-field input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--hairline);
+  background: var(--bg);
+  font: inherit;
+  font-size: 16px;
+  outline: none;
+}
+.feedback-field textarea { resize: vertical; min-height: 120px; line-height: 1.45; }
+.feedback-field textarea:focus, .feedback-field input:focus { border-color: var(--gold); }
+.feedback-count { color: var(--text-2); align-self: flex-end; }
+.feedback-count:empty { display: none; }
+.feedback-trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.feedback-error { margin: 0; color: var(--down); font-size: 14px; font-weight: 600; }
+.feedback-form .button[disabled] { opacity: 0.6; cursor: progress; }
+.feedback-sent { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 24px 18px; }
+.feedback-sent h2 { margin: 0; font-size: 20px; }
+.feedback-sent p { margin: 0; color: var(--text-2); font-size: 15px; }
+.feedback-sent .about-cta { align-self: stretch; margin-top: 6px; }
+
+.feedback-card { padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.feedback-card h2 { margin: 0; font-size: 19px; }
+.feedback-card p { margin: 0; font-size: 15px; line-height: 1.5; color: var(--text-2); }
+.feedback-card .about-cta { flex-wrap: wrap; margin-top: 4px; }

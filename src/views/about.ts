@@ -75,9 +75,19 @@ export const aboutView: View = ({ root, params }) => {
       <a class="button prominent big" href="/coach/">Try OpenBoard for Coaches →</a>
     </section>
 
+    <section class="card feedback-card" aria-labelledby="feedback-title">
+      <h2 id="feedback-title">💡 Have an idea?</h2>
+      <p>Tell me what would make OpenBoard better, or what isn't working. I read every message.</p>
+      <div class="about-cta">
+        <a class="button prominent big" href="#/feedback?kind=idea">Suggest an idea</a>
+        <a class="button big" href="#/feedback?kind=problem">Report a problem</a>
+      </div>
+    </section>
+
     <section class="about-footer">
       <p>Ratings come from US Chess's <a href="https://ratings.uschess.org" target="_blank" rel="noopener">ratings site (MUIR)</a>. Tournaments come from US Chess's <a href="https://new.uschess.org/upcoming-tournaments" target="_blank" rel="noopener">Tournament Life Announcements</a> and Plan Ahead Calendar.</p>
       <p>Also on iPhone and iPad: <a href="https://github.com/ilia-pavlov/OpenBoard" target="_blank" rel="noopener">OpenBoard for iOS</a>.</p>
+      <p><a href="#/feedback">💡 Send feedback or a suggestion</a></p>
       ${supportLink()}
       <p class="muted">Not affiliated with or endorsed by the US Chess Federation. Want to play rated games? <a href="https://www.uschess.org/join" target="_blank" rel="noopener">Join US Chess</a>.</p>
     </section>
