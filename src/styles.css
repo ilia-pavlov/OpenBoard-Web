@@ -798,6 +798,16 @@ a.tournament-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(-
 .about-crown { font-size: 64px; line-height: 1; color: var(--gold); text-shadow: 0 0 calc(24px * var(--glow)) color-mix(in srgb, var(--gold) 50%, transparent); }
 .about-hero h1 { font-size: 36px; font-weight: 800; letter-spacing: -0.02em; }
 .about-tagline { color: var(--text-2); font-size: 17px; max-width: 360px; }
+.about-visitors {
+  margin-top: 4px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  color: var(--text-2);
+  background: color-mix(in srgb, var(--gold) 10%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--gold) 35%, var(--hairline));
+}
+.about-visitors strong { color: var(--gold); font-variant-numeric: tabular-nums; }
 .about-mission { padding: 18px; display: flex; flex-direction: column; gap: 10px; font-size: 16px; line-height: 1.5; }
 .about-mission .section-label { margin: 0; }
 .about-mission strong { color: var(--gold); font-weight: 600; }

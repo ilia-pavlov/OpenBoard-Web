@@ -3,9 +3,11 @@
 // /api/* (see run_worker_first in wrangler.jsonc). It sends other hostnames to
 // the canonical one, gives share links real link-preview tags, and relays
 // /api/* to US Chess with an edge cache in front. POST /api/feedback saves the
-// "Send feedback" form to D1.
+// "Send feedback" form to D1; POST /api/visit and GET /api/stats count people
+// (see visits.ts).
 
 import { createTable, insertFeedback, parseFeedback } from './feedback'
+import { countVisit, visitorsLast30Days } from './visits'
 import { type Preview, type ShareLink, eventPreview, metaTags, parseShareLink, playerPreview, tournamentPreview } from './preview'
 import { type Upstream, canonicalRedirect, upstreamFor, userAgent } from './relay'
 
@@ -78,13 +80,42 @@ async function saveFeedback(request: Request, url: URL, env: Env): Promise<Respo
   if ('spam' in parsed) return Response.json({ ok: true })
   const { kind, message, contact } = parsed.feedback
   try {
-    await env.FEEDBACK.batch([env.FEEDBACK.prepare(createTable), env.FEEDBACK.prepare(insertFeedback).bind(kind, message, contact)])
+    await env.DB.batch([env.DB.prepare(createTable), env.DB.prepare(insertFeedback).bind(kind, message, contact)])
   } catch (e) {
     console.error(JSON.stringify({ message: 'saving feedback failed', error: String(e) }))
     return error(500, "Couldn't save your message.")
   }
   console.log(JSON.stringify({ message: 'feedback received', kind }))
   return Response.json({ ok: true }, { headers: { 'Cache-Control': 'no-store' } })
+}
+
+/** Counts a visit (the page asks at most once per 30 days). Only this site's pages may post it. */
+async function recordVisit(request: Request, url: URL, env: Env): Promise<Response> {
+  const origin = request.headers.get('Origin')
+  if (!origin || URL.parse(origin)?.host !== url.host) return error(403, 'Not from openboard.online.')
+  try {
+    await countVisit(env.DB, request.headers.get('CF-Connecting-IP') ?? '', request.headers.get('User-Agent') ?? '')
+  } catch (e) {
+    console.error(JSON.stringify({ message: 'counting a visit failed', error: String(e) }))
+  }
+  return new Response(null, { status: 204, headers: { 'Cache-Control': 'no-store' } })
+}
+
+/** How long the 30-day count is reused before D1 is asked again. */
+const statsTTL = 600
+
+/** `{ visitors30d }` for the About page, cached at the edge for a few minutes. */
+async function stats(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  const cache = caches.default
+  const cacheKey = new Request(new URL('/api/stats', request.url))
+  const cached = await cache.match(cacheKey)
+  if (cached) return cached
+  const response = Response.json(
+    { visitors30d: await visitorsLast30Days(env.DB) },
+    { headers: { 'Cache-Control': `public, max-age=${statsTTL}` } },
+  )
+  ctx.waitUntil(cache.put(cacheKey, response.clone()))
+  return response
 }
 
 /** The relay path holding a share link's data, and how to turn it into a preview. */
@@ -144,6 +175,10 @@ export default {
     if (url.pathname === '/api/feedback') {
       return request.method === 'POST' ? saveFeedback(request, url, env) : error(405, 'Send feedback with POST.')
     }
+    if (url.pathname === '/api/visit') {
+      return request.method === 'POST' ? recordVisit(request, url, env) : error(405, 'Count a visit with POST.')
+    }
+    if (url.pathname === '/api/stats') return stats(request, env, ctx)
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return error(405, 'Only GET requests are relayed.')
     }

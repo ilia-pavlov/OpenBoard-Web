@@ -5,6 +5,7 @@ import type { View } from '../router'
 import { replaceQuery } from '../router'
 import { supportCard, supportLink } from '../donate'
 import { chevron, prefs } from '../ui'
+import { visitorsLast30Days, visitorsLine } from '../visitors'
 
 const features: { icon: string; title: string; text: string; href: string }[] = [
   { icon: '▦', title: 'Find tournaments near you', text: 'Rated events within 10 to 500 miles, this weekend or months ahead, plus national championships.', href: '#/events' },
@@ -15,7 +16,7 @@ const features: { icon: string; title: string; text: string; href: string }[] = 
   { icon: '⌕', title: 'Look anyone up', text: 'Search any US Chess player by name or member ID, or a tournament by event ID.', href: '#/search' },
 ]
 
-export const aboutView: View = ({ root, params }) => {
+export const aboutView: View = ({ root, params, signal }) => {
   document.title = 'About · OpenBoard'
   const myCard = prefs.primary ? `#/player/${prefs.primary}` : '#/search'
   root.innerHTML = `
@@ -23,6 +24,7 @@ export const aboutView: View = ({ root, params }) => {
       <div class="about-crown" aria-hidden="true">♛</div>
       <h1>OpenBoard</h1>
       <p class="about-tagline">US Chess ratings and tournaments, made for families.</p>
+      <p class="about-visitors" hidden></p>
     </section>
 
     <section class="card about-mission">
@@ -105,6 +107,14 @@ export const aboutView: View = ({ root, params }) => {
         </ul>
       </div>
     </details>`
+
+  // The 30-day visitor count, shown once it reaches 100.
+  visitorsLast30Days(signal).then((count) => {
+    const line = root.querySelector<HTMLElement>('.about-visitors')
+    if (signal.aborted || !line || !visitorsLine(count)) return
+    line.innerHTML = visitorsLine(count)
+    line.hidden = false
+  })
 
   // From the header button: open the ideology section (and, for older links,
   // bring it into view). The query is dropped so the button works again.
