@@ -1,4 +1,4 @@
-// "1,247 people used OpenBoard in the last 30 days" on About. This browser
+// "1,247 people · 30 days" in the header. This browser
 // asks to be counted at most once per 30 days, remembered on this device
 // only; the server keeps just a number per day (see worker/visits.ts).
 
@@ -31,18 +31,29 @@ export function countThisVisit() {
     .catch(() => {})
 }
 
-/** The About line, or '' while the number is below `minimumShown`. */
-export function visitorsLine(count: number): string {
+/** The header badge's content, or '' while the number is below `minimumShown`. */
+export function visitorsBadge(count: number): string {
   if (!(count >= minimumShown)) return ''
-  return `♛ <strong>${num(count)}</strong> people used OpenBoard in the last 30 days`
+  return `<strong>${num(count)}</strong><small>people · 30 days</small>`
 }
 
 /** People counted over the last 30 days (0 if it can't be loaded). */
-export async function visitorsLast30Days(signal?: AbortSignal): Promise<number> {
+async function visitorsLast30Days(): Promise<number> {
   try {
-    const r = await fetch('/api/stats', { signal })
+    const r = await fetch('/api/stats')
     return r.ok ? Number(((await r.json()) as { visitors30d?: number }).visitors30d) || 0 : 0
   } catch {
     return 0
   }
+}
+
+/** Fills the header badge once the count is loaded and big enough. */
+export async function showVisitors(badge: HTMLElement) {
+  const count = await visitorsLast30Days()
+  const html = visitorsBadge(count)
+  if (!html) return
+  badge.innerHTML = html
+  badge.title = `${num(count)} people used OpenBoard in the last 30 days`
+  badge.setAttribute('aria-label', badge.title)
+  badge.hidden = false
 }

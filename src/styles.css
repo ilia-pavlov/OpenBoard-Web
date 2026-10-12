@@ -48,6 +48,22 @@ main:focus, main:focus-visible { outline: none; }
 .appearance { margin-left: auto; }
 .tabs + .appearance { margin-left: 0; }
 
+/* People over the last 30 days, two lines like the brand button. */
+.visitors {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--gold) 30%, var(--hairline));
+  background: color-mix(in srgb, var(--gold) 8%, var(--card));
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.visitors[hidden] { display: none; }
+.visitors strong { color: var(--gold); font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.visitors small { font-size: 11px; font-weight: 600; color: var(--text-2); }
+
 /* Phones: the tabs move to a bottom bar, like the app's tab bar. */
 @media (max-width: 640px) {
   /* A blurred header would become the bar's containing block and pin it to the header. */
@@ -79,6 +95,8 @@ main:focus, main:focus-visible { outline: none; }
   .tabs a[aria-current] { background: none; }
   .tab-icon { display: block; font-size: 20px; line-height: 1.1; }
   .tabs + .appearance { margin-left: auto; }
+  /* Centered between the brand and the appearance button. */
+  .visitors { margin-left: auto; }
 }
 
 /* MARK: Layout */
@@ -798,16 +816,6 @@ a.tournament-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(-
 .about-crown { font-size: 64px; line-height: 1; color: var(--gold); text-shadow: 0 0 calc(24px * var(--glow)) color-mix(in srgb, var(--gold) 50%, transparent); }
 .about-hero h1 { font-size: 36px; font-weight: 800; letter-spacing: -0.02em; }
 .about-tagline { color: var(--text-2); font-size: 17px; max-width: 360px; }
-.about-visitors {
-  margin-top: 4px;
-  padding: 6px 14px;
-  border-radius: 999px;
-  font-size: 14px;
-  color: var(--text-2);
-  background: color-mix(in srgb, var(--gold) 10%, var(--card));
-  border: 1px solid color-mix(in srgb, var(--gold) 35%, var(--hairline));
-}
-.about-visitors strong { color: var(--gold); font-variant-numeric: tabular-nums; }
 .about-mission { padding: 18px; display: flex; flex-direction: column; gap: 10px; font-size: 16px; line-height: 1.5; }
 .about-mission .section-label { margin: 0; }
 .about-mission strong { color: var(--gold); font-weight: 600; }
