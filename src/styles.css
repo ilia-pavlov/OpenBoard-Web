@@ -48,20 +48,23 @@ main:focus, main:focus-visible { outline: none; }
 .appearance { margin-left: auto; }
 .tabs + .appearance { margin-left: 0; }
 
-/* People over the last 30 days, two lines like the brand button. */
+/* Monthly users: a people icon and two lines, like the brand button. */
 .visitors {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
   align-items: center;
-  padding: 4px 12px;
+  gap: 8px;
+  padding: 4px 12px 4px 5px;
   border-radius: 14px;
   border: 1px solid color-mix(in srgb, var(--gold) 30%, var(--hairline));
-  background: color-mix(in srgb, var(--gold) 8%, var(--card));
-  line-height: 1.1;
+  background: var(--card);
   white-space: nowrap;
+  flex: none;
 }
 .visitors[hidden] { display: none; }
-.visitors strong { color: var(--gold); font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.visitors-icon { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--gold) 18%, transparent); color: var(--gold); }
+.visitors-icon svg { width: 16px; height: 16px; }
+.visitors-text { display: flex; flex-direction: column; line-height: 1.1; }
+.visitors strong { color: var(--gold); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .visitors small { font-size: 11px; font-weight: 600; color: var(--text-2); }
 
 /* Phones: the tabs move to a bottom bar, like the app's tab bar. */

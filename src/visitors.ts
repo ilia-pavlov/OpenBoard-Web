@@ -1,4 +1,4 @@
-// "1,247 people · 30 days" in the header. This browser
+// "1,247 monthly users" in the header. This browser
 // asks to be counted at most once per 30 days, remembered on this device
 // only; the server keeps just a number per day (see worker/visits.ts).
 
@@ -31,10 +31,12 @@ export function countThisVisit() {
     .catch(() => {})
 }
 
+const peopleIcon = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2 19c0-3.3 3.1-5.5 7-5.5s7 2.2 7 5.5v1H2z"/><circle cx="17" cy="9" r="2.8" opacity=".7"/><path d="M15.5 13.7c3.6.2 6.5 2.2 6.5 5.3v1h-4.5v-1c0-2.1-.8-3.9-2-5.3z" opacity=".7"/></svg>`
+
 /** The header badge's content, or '' while the number is below `minimumShown`. */
 export function visitorsBadge(count: number): string {
   if (!(count >= minimumShown)) return ''
-  return `<strong>${num(count)}</strong><small>people · 30 days</small>`
+  return `<span class="visitors-icon">${peopleIcon}</span><span class="visitors-text"><strong>${num(count)}</strong><small>monthly users</small></span>`
 }
 
 /** People counted over the last 30 days (0 if it can't be loaded). */

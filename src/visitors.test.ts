@@ -25,6 +25,6 @@ describe('visitorsBadge', () => {
 
   it('shows the exact number from 100 up', () => {
     expect(visitorsBadge(100)).toContain('<strong>100</strong>')
-    expect(visitorsBadge(1247)).toBe('<strong>1,247</strong><small>people · 30 days</small>')
+    expect(visitorsBadge(1247)).toContain('<strong>1,247</strong><small>monthly users</small>')
   })
 })
