@@ -14,6 +14,7 @@
     "preview:worker": "npm run build && wrangler dev",
     "cf-typegen": "wrangler types worker/worker-configuration.d.ts",
     "feedback": "wrangler d1 execute openboard-feedback --remote --command \"SELECT id, created_at, kind, contact, message FROM feedback ORDER BY id DESC LIMIT 50\"",
+    "visitors": "wrangler d1 execute openboard-feedback --remote --command \"SELECT day, count FROM visitors_daily ORDER BY day DESC LIMIT 60\"",
     "preview:upload": "npm run build && wrangler versions upload --preview-alias staging"
   },
   "devDependencies": {

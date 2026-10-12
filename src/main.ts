@@ -12,6 +12,7 @@ import { myCardView, profileView } from './views/player'
 import { searchView } from './views/search'
 import { watchingView } from './views/watching'
 import { checkIfDue, registerServiceWorker } from './watchlist'
+import { countThisVisit, showVisitors } from './visitors'
 import { openSharedLink } from './share'
 import { enableProvisionalInfo } from './provisional-info'
 import { top100BrowseView, top100ListView } from './views/top100'
@@ -67,6 +68,8 @@ const app = document.getElementById('app')!
 startBadges(app)
 enableProvisionalInfo()
 registerServiceWorker()
+countThisVisit()
+showVisitors(document.querySelector<HTMLElement>('.visitors')!, document.getElementById('visitors-sheet')!)
 checkIfDue()
 startRouter(
   app,

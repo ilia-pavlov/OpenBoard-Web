@@ -5,7 +5,6 @@ import type { View } from '../router'
 import { replaceQuery } from '../router'
 import { supportCard, supportLink } from '../donate'
 import { chevron, prefs } from '../ui'
-
 const features: { icon: string; title: string; text: string; href: string }[] = [
   { icon: '▦', title: 'Find tournaments near you', text: 'Rated events within 10 to 500 miles, this weekend or months ahead, plus national championships.', href: '#/events' },
   { icon: '♥', title: 'Follow friends and rivals', text: 'Watch any player and see the moment their rating changes.', href: '#/watching' },
@@ -22,8 +21,7 @@ export const aboutView: View = ({ root, params }) => {
     <section class="about-hero">
       <div class="about-crown" aria-hidden="true">♛</div>
       <h1>OpenBoard</h1>
-      <p class="about-tagline">US Chess ratings and tournaments, made for families.</p>
-    </section>
+      <p class="about-tagline">US Chess ratings and tournaments, made for families.</p>    </section>
 
     <section class="card about-mission">
       <h2 class="section-label">Why I built this</h2>

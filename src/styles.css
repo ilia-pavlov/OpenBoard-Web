@@ -48,6 +48,77 @@ main:focus, main:focus-visible { outline: none; }
 .appearance { margin-left: auto; }
 .tabs + .appearance { margin-left: 0; }
 
+/* MARK: Header capsule: OpenBoard | monthly users … tabs · appearance, in one
+   rounded bar. No backdrop-filter here: it would trap the phone tab bar. */
+
+.capsule {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  height: 48px;
+  padding: 0 6px 0 6px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: var(--card);
+}
+.capsule .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 10px 0 8px;
+  border-radius: 999px;
+  line-height: 1.1;
+  white-space: nowrap;
+  flex: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.capsule .brand:hover { background: color-mix(in srgb, var(--gold) 8%, transparent); }
+.capsule .brand[aria-current] { color: var(--gold); background: color-mix(in srgb, var(--gold) 12%, transparent); }
+.capsule .brand[aria-current] .brand-sub { color: var(--gold); }
+.capsule .brand-mark { font-size: 19px; }
+.brand-text { display: flex; flex-direction: column; align-items: flex-start; }
+.brand-name { font-weight: 700; font-size: 15px; }
+.brand-sub { font-size: 11px; font-weight: 600; color: var(--text-2); letter-spacing: 0.01em; }
+
+/* Monthly users, after a thin divider. */
+.visitors {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: 4px;
+  padding: 0 4px 0 12px;
+  border: 0;
+  border-left: 1px solid var(--hairline);
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  flex: none;
+}
+.visitors[hidden] { display: none; }
+.visitors:hover small { color: var(--gold); }
+.visitors-icon { display: grid; place-items: center; color: var(--gold); }
+.visitors-icon svg { width: 16px; height: 16px; }
+.visitors-text { display: flex; flex-direction: column; line-height: 1.1; }
+.visitors strong { color: var(--gold); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.visitors small { font-size: 11px; font-weight: 600; color: var(--text-2); }
+
+.capsule .tabs { margin: 0 6px 0 auto; }
+.capsule .appearance {
+  width: 36px;
+  height: 36px;
+  margin-left: 0;
+  flex: none;
+  border: 0;
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 14%, transparent);
+}
+.capsule .appearance:hover { background: color-mix(in srgb, var(--gold) 22%, transparent); }
+
 /* Phones: the tabs move to a bottom bar, like the app's tab bar. */
 @media (max-width: 640px) {
   /* A blurred header would become the bar's containing block and pin it to the header. */
@@ -79,6 +150,17 @@ main:focus, main:focus-visible { outline: none; }
   .tabs a[aria-current] { background: none; }
   .tab-icon { display: block; font-size: 20px; line-height: 1.1; }
   .tabs + .appearance { margin-left: auto; }
+  /* The tabs leave for the bottom bar; the appearance button keeps the right end. */
+  .capsule .appearance { margin-left: auto; }
+}
+
+/* The smallest phones (iPhone SE, 320px): tighter spacing so nothing overlaps. */
+@media (max-width: 359px) {
+  .topbar { padding-left: max(10px, env(safe-area-inset-left)); padding-right: max(10px, env(safe-area-inset-right)); }
+  .capsule { padding: 0 4px; }
+  .capsule .brand { gap: 5px; padding: 0 6px 0 5px; }
+  .visitors { gap: 5px; margin-left: 2px; padding-left: 8px; }
+  .capsule .appearance { width: 34px; height: 34px; }
 }
 
 /* MARK: Layout */
@@ -599,6 +681,30 @@ a.event-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(--hair
 .info-popover p { margin: 0; }
 .info-popover .button { margin-top: 12px; width: 100%; }
 
+/* The "monthly users" sheet: grouped lists, gold for over the board and teal
+   for online. Label left, number right, detail and source underneath. */
+.visitors-sheet { width: min(360px, calc(100vw - 32px)); max-width: none; }
+.visitors-sheet .sheet-body { display: flex; flex-direction: column; gap: 14px; }
+.visitors-sheet h3 { margin: 0; }
+.sheet-group { --tint: var(--gold); display: flex; flex-direction: column; gap: 6px; }
+.sheet-group.online { --tint: var(--teal); }
+.visitors-sheet .sheet-cap { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tint); }
+.sheet-box {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--tint) 38%, var(--hairline));
+  background: color-mix(in srgb, var(--tint) 8%, var(--bg));
+}
+.sheet-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: baseline; padding: 11px 12px; }
+.sheet-row + .sheet-row { border-top: 1px solid color-mix(in srgb, var(--tint) 22%, var(--hairline)); }
+.sheet-label { font-weight: 600; font-size: 15px; }
+.sheet-num { font-size: 17px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.otb .sheet-num { color: var(--gold); font-size: 20px; }
+.sheet-detail, .sheet-source { grid-column: 1 / -1; font-size: 12px; line-height: 1.4; }
+.sheet-detail { color: var(--text-2); }
+.sheet-source { color: var(--tint); font-weight: 600; justify-self: start; }
+.sheet-note { font-size: 12px; color: var(--text-2); line-height: 1.45; }
+
 /* MARK: Top 100 */
 
 .segmented.three { grid-template-columns: repeat(3, 1fr); }
@@ -868,8 +974,6 @@ a.tournament-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(-
 
 /* MARK: Ways to About */
 
-.brand-info { margin-left: 6px; font-size: 15px; font-weight: 400; color: var(--text-2); transition: color 0.15s ease; }
-.brand:hover .brand-info, .brand:focus-visible .brand-info { color: var(--gold); }
 .card-footer-links { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 8px 0 4px; font-size: 14px; color: var(--text-3); }
 .card-footer-links a { color: var(--gold); font-weight: 600; }
 
@@ -884,29 +988,6 @@ a.tournament-row:hover { border-color: color-mix(in srgb, var(--text) 20%, var(-
 .ideology-body h2 { margin: 0; font-size: 18px; }
 .ideology-body ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 15px; line-height: 1.5; color: var(--text-2); }
 .ideology-body li strong { color: var(--text); }
-
-/* MARK: Header: OpenBoard as one two-line button (About · our ideology) */
-
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 12px 4px 10px;
-  margin-left: -4px;
-  border-radius: 14px;
-  border: 1px solid var(--hairline);
-  background: var(--card);
-  font-size: 16px;
-  line-height: 1.1;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-.brand:hover { border-color: color-mix(in srgb, var(--gold) 50%, var(--hairline)); }
-.brand-text { display: flex; flex-direction: column; align-items: flex-start; }
-.brand-name { font-weight: 700; font-size: 16px; }
-.brand-sub { font-size: 11px; font-weight: 600; color: var(--text-2); letter-spacing: 0.01em; }
-.brand-info { margin-left: 2px; }
-.brand[aria-current] { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 55%, transparent); background: color-mix(in srgb, var(--gold) 12%, var(--card)); }
-.brand[aria-current] .brand-sub, .brand[aria-current] .brand-info { color: var(--gold); }
 
 /* MARK: Coaches invitation (About) */
 
