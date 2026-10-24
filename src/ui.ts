@@ -167,7 +167,7 @@ export const prefs = {
   },
   setPrimary(memberID: string) {
     const rows = this.watched.map((r) => ({ ...r, isPrimary: r.memberID === memberID }))
-    // My players come first, like the app's sections.
+    // My Player comes first, like the app's sections.
     this.watched = [...rows.filter((r) => r.isPrimary), ...rows.filter((r) => !r.isPrimary)]
   },
   updateWatched(memberID: string, changes: Partial<WatchedPlayer>) {
@@ -212,6 +212,41 @@ export const prefs = {
   removeSaved(id: string) {
     write('savedTournaments', this.savedTournaments.filter((t) => t.id !== id))
   },
+  /** State filter for school & club search ("NJ"); "" for all states, null if never chosen. */
+  get clubState(): string | null {
+    return read<string | null>('clubs.state', null)
+  },
+  set clubState(code: string | null) {
+    write('clubs.state', code)
+  },
+  /** Saved schools and clubs, in the order saved. */
+  get savedClubs(): SavedClub[] {
+    return read<SavedClub[]>('savedClubs', [])
+  },
+  isClubSaved(id: string): boolean {
+    return this.savedClubs.some((c) => c.id === id)
+  },
+  removeSavedClub(id: string) {
+    write('savedClubs', this.savedClubs.filter((c) => c.id !== id))
+  },
+  /** Save or unsave (unsaving My School too); returns whether now saved. */
+  toggleSavedClub(club: SavedClub): boolean {
+    const others = this.savedClubs.filter((c) => c.id !== club.id)
+    const saving = others.length === this.savedClubs.length
+    write('savedClubs', saving ? [...others, { ...club, isMine: false }] : others)
+    return saving
+  },
+  /** The one school or club that's the reader's own, like My Player. */
+  get myClub(): SavedClub | undefined {
+    return this.savedClubs.find((c) => c.isMine)
+  },
+  /** Makes this school or club My School (saving it if needed), replacing the previous one; null clears it. */
+  setMyClub(club: SavedClub | null) {
+    const rows = this.savedClubs.map((c) => ({ ...c, isMine: c.id === club?.id }))
+    if (club && !rows.some((c) => c.id === club.id)) rows.push({ ...club, isMine: true })
+    // My School first, like the sections.
+    write('savedClubs', [...rows.filter((c) => c.isMine), ...rows.filter((c) => !c.isMine)])
+  },
   toggleSaved(t: SavedTournament): boolean {
     const others = this.savedTournaments.filter((s) => s.id !== t.id)
     const saving = others.length === this.savedTournaments.length
@@ -244,6 +279,15 @@ export interface SavedTournament {
   startDate?: string
   endDate?: string
   location?: string
+}
+
+/** A US Chess affiliate (school or club) kept on Watching. */
+export interface SavedClub {
+  id: string
+  name: string
+  state?: string
+  /** My School & Club: at most one. */
+  isMine?: boolean
 }
 
 /** "2026-10-09" for a local date. */

@@ -60,6 +60,7 @@ export const crosstableView: View = ({ root, params, signal }, [eventID]) => {
       <header class="event-header">
         <h1 class="event-title">${esc(event.name)}</h1>
         <p class="muted small">${meta} · <button class="copy-id inline" type="button" data-action="copy-id">Event ${esc(event.id)}</button></p>
+        ${event.club ? `<a class="club-link" href="#/club/${esc(event.club.id)}"><span aria-hidden="true">🏫</span>${esc(event.club.name)}${chevron}</a>` : ''}
         <div class="header-actions">${shareButton('Share crosstable', 'button icon-label')}</div>
       </header>
       ${event.sections.length > 1 ? sectionPicker(event, sectionIndex, highlight) : ''}

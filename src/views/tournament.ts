@@ -12,11 +12,19 @@ import { dateRange, errorCard, esc, isoDay, phone, prefs, sectionLabel, skeleton
 import { dateBlock } from './events'
 import { share, shareButton, tournamentShareURL } from '../share'
 
+/** "‹ Events" unless the page was opened from Search or a club's page. */
+function backLinkFor(back: string | null): string {
+  if (back === 'search') return `<a class="back-link" href="#/search?scope=events">‹ Search</a>`
+  const club = back?.match(/^club\/([A-Z]\d{7})$/)
+  if (club) return `<a class="back-link" href="#/club/${club[1]}">‹ Club</a>`
+  return `<a class="back-link" href="#/events">‹ Events</a>`
+}
+
 const isApple = () => /iPhone|iPad|Macintosh/.test(navigator.userAgent)
 
-export const tournamentView: View = ({ root, signal }, [slug]) => {
+export const tournamentView: View = ({ root, params, signal }, [slug]) => {
   const id = `/${slug}`
-  const backLink = `<a class="back-link" href="#/events">‹ Events</a>`
+  const backLink = backLinkFor(params.get('back'))
 
   const load = () => {
     root.innerHTML = `${backLink}<h1 class="screen-title small-title">Tournament</h1>${skeleton([90, 48, 260, 220, 120])}`

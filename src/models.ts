@@ -53,6 +53,7 @@ export interface APIRatedEvent {
   startDate?: string
   endDate?: string
   sections?: { number: number; name?: string }[]
+  affiliate?: { id?: string; name?: string }
 }
 
 export interface APIStanding {
@@ -103,6 +104,28 @@ export interface APIMaxRank {
   ratingSource?: string
   maxRank?: number
   jurisdiction?: string // absent = national
+}
+
+/** A US Chess affiliate: the club, school or organizer that runs rated events. */
+export interface APIAffiliate {
+  id: string
+  name?: string
+  stateCode?: string
+  /** Membership end. `status` says "Active" even decades after this, so it's what tells current from lapsed. */
+  expirationDate?: string
+}
+
+/** One row of a rated-event list (search results, a club's events). */
+export interface APIEventSummary {
+  id: string
+  name?: string
+  startDate?: string
+  endDate?: string
+  sectionCount?: number
+  playerCount?: number
+  city?: string
+  stateCode?: string
+  affiliate?: { id?: string; name?: string }
 }
 
 // MARK: - Domain
@@ -182,6 +205,8 @@ export interface ChessEvent {
   name: string
   date: Date | null
   sections: EventSection[]
+  /** The club or school that ran it. */
+  club?: { id: string; name: string }
 }
 
 /** A rated Regular win (dual-rated included), before the opponent's rating is known. */
@@ -297,6 +322,27 @@ export interface PlayerSummary {
   regular?: number
 }
 
+export interface Club {
+  id: string
+  name: string
+  state?: string
+  /** Membership still current (not past its expiration date). */
+  isCurrent: boolean
+  expires: Date | null
+}
+
+export interface EventSummary {
+  id: string
+  name: string
+  start: Date | null
+  end: Date | null
+  /** "Gainesville, FL" */
+  place?: string
+  players?: number
+  sections?: number
+  club?: { id: string; name: string }
+}
+
 // MARK: - Domain helpers
 
 export const isProvisional = (r: Rating) => r.provisional ?? (r.games ?? 0) < 26
@@ -388,6 +434,13 @@ export function capitalizedIfShouty(s: string): string {
   if (!s || s !== s.toUpperCase()) return s
   return s.toLowerCase().split(' ').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 }
+
+/** Company suffixes that read wrong title-cased ("Llc"). */
+const suffixes: Record<string, string> = { llc: 'LLC', inc: 'Inc.', 'inc.': 'Inc.' }
+
+/** A club or school name: title-cased if shouty, with LLC/Inc. written properly. */
+export const clubName = (s: string) =>
+  capitalizedIfShouty(s.trim()).replace(/\b(llc|inc)\b\.?/gi, (m) => suffixes[m.toLowerCase()] ?? m)
 
 export const fullName = (first?: string, last?: string) =>
   capitalizedIfShouty([first, last].filter(Boolean).join(' '))
@@ -497,6 +550,7 @@ export function mapEvent(api: APIRatedEvent, standings: Map<number, APIStanding[
         name: ref.name || `Section ${ref.number}`,
         players: (standings.get(ref.number) ?? []).map(mapStanding),
       })),
+    club: clubRef(api.affiliate),
   }
 }
 
@@ -524,5 +578,66 @@ export function mapSummary(member: APIMember): PlayerSummary {
     name: fullName(member.firstName, member.lastName),
     state: member.stateRep ?? member.jurisdiction,
     regular: member.ratings?.find((r) => r.ratingSystem === 'R')?.rating,
+  }
+}
+
+export function mapClub(api: APIAffiliate, now = new Date()): Club {
+  const expires = parseDate(api.expirationDate)
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  return {
+    id: api.id,
+    name: clubName(api.name?.trim() || api.id),
+    state: api.stateCode || undefined,
+    isCurrent: expires != null && expires >= today,
+    expires,
+  }
+}
+
+/** Current clubs first; the API's order otherwise (its best matches lead). */
+export const currentFirst = (clubs: Club[]) => [...clubs.filter((c) => c.isCurrent), ...clubs.filter((c) => !c.isCurrent)]
+
+/** A school or club seen running rated events in a state. */
+export interface ActiveClub {
+  id: string
+  name: string
+  events: number
+  /** Its most recent of those events. */
+  last: Date | null
+}
+
+/** Rated events grouped by the club that ran them: busiest first, then most recent. */
+export function activeClubs(events: EventSummary[]): ActiveClub[] {
+  const clubs = new Map<string, ActiveClub>()
+  for (const e of events) {
+    if (!e.club) continue
+    const club = clubs.get(e.club.id)
+    if (!club) clubs.set(e.club.id, { id: e.club.id, name: e.club.name, events: 1, last: e.start })
+    else {
+      club.events++
+      if (e.start && (!club.last || e.start > club.last)) club.last = e.start
+    }
+  }
+  return [...clubs.values()].sort((a, b) => b.events - a.events || (b.last?.getTime() ?? 0) - (a.last?.getTime() ?? 0))
+}
+
+/** "A6030981", "H6043396": one letter and seven digits. */
+export const isClubID = (s: string) => /^[A-Za-z]\d{7}$/.test(s.trim())
+
+function clubRef(api?: { id?: string; name?: string }): { id: string; name: string } | undefined {
+  return api?.id ? { id: api.id, name: clubName(api.name?.trim() || api.id) } : undefined
+}
+
+export function mapEventSummary(api: APIEventSummary): EventSummary {
+  const city = api.city?.trim() ? capitalizedIfShouty(api.city.trim()) : undefined
+  const place = [city, api.stateCode].filter(Boolean).join(', ') || undefined
+  return {
+    id: api.id,
+    name: capitalizedIfShouty(api.name?.trim() || `Event ${api.id}`),
+    start: parseDate(api.startDate),
+    end: parseDate(api.endDate ?? api.startDate),
+    place,
+    players: api.playerCount,
+    sections: api.sectionCount,
+    club: clubRef(api.affiliate),
   }
 }

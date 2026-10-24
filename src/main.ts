@@ -6,6 +6,7 @@ import { aboutView } from './views/about'
 import { thanksView } from './views/thanks'
 import { feedbackView } from './views/feedback'
 import { crosstableView } from './views/crosstable'
+import { clubView } from './views/club'
 import { eventsView } from './views/events'
 import { historyView } from './views/history'
 import { myCardView, profileView } from './views/player'
@@ -82,6 +83,7 @@ startRouter(
     { pattern: /^\/player\/(\d{8})$/, view: profileView, tab: 'search' },
     { pattern: /^\/player\/(\d{8})\/history$/, view: historyView, tab: 'search' },
     { pattern: /^\/event\/(\d{12})$/, view: crosstableView },
+    { pattern: /^\/club\/([A-Z]\d{7})$/, view: clubView, tab: 'search' },
     { pattern: /^\/events$/, view: eventsView, tab: 'events' },
     { pattern: /^\/tournament\/([\w%.-]+)$/, view: tournamentView, tab: 'events' },
     { pattern: /^\/major$/, view: majorEventView, tab: 'events' },

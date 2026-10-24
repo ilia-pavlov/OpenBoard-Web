@@ -40,6 +40,10 @@ const ratingsTTL: [RegExp, number][] = [
   [/^members$/, 10 * minutes], // name search
   [/^rated-events\/\d{12}(\/sections\/\d{1,3}\/standings)?$/, 6 * hours],
   [/^top-players(\/[A-Za-z0-9]+)?$/, 12 * hours],
+  [/^rated-events$/, 30 * minutes], // event name search
+  [/^affiliates$/, 1 * hours], // club and school search
+  [/^affiliates\/[A-Z]\d{7}$/, 12 * hours],
+  [/^affiliates\/[A-Z]\d{7}\/events$/, 1 * hours],
 ]
 
 /** Cache lifetimes for new.uschess.org pages, first match wins. */
@@ -50,7 +54,7 @@ const siteTTL: [RegExp, number][] = [
 ]
 
 /** Query parameters each upstream accepts; anything else is dropped (and can't split the cache). */
-const ratingsParams = new Set(['Fuzzy', 'Size', 'Offset', 'RatingSource'])
+const ratingsParams = new Set(['Fuzzy', 'Name', 'StateCode', 'Size', 'Offset', 'RatingSource'])
 const siteParams = new Set([
   'field_geofield_proximity[value]',
   'field_geofield_proximity[source_configuration][origin_address]',

@@ -13,6 +13,12 @@ export const Ratings = {
   sectionStandings: 'rated-events/{eventID}/sections/{section}/standings',
   topListCatalog: 'top-players',
   topList: 'top-players/{listID}',
+  /** Rated events, newest first; with `Name`, the ones whose name or club name matches. */
+  eventSearch: 'rated-events',
+  /** Clubs and schools ("affiliates"); `Fuzzy` matches a name or an ID. */
+  affiliateSearch: 'affiliates',
+  affiliate: 'affiliates/{affiliateID}',
+  affiliateEvents: 'affiliates/{affiliateID}/events',
 } as const
 
 /** new.uschess.org pages (HTML, or Drupal's JSON view of a page), through the relay. */
@@ -26,6 +32,8 @@ export const Site = {
 /** Query parameter names (the API ignores unknown ones silently). */
 export const Params = {
   fuzzy: 'Fuzzy',
+  name: 'Name',
+  state: 'StateCode',
   size: 'Size',
   offset: 'Offset',
   ratingSource: 'RatingSource',

@@ -376,6 +376,46 @@ export async function fetchMajorEvents(): Promise<MajorEvent[]> {
   return parseMajorEvents(await text(Site.planAheadCalendar))
 }
 
+/** Announcements matching a keyword (title, organizer or text), soonest first. */
+export async function searchUpcoming(keyword: string, pages = 2): Promise<TournamentListing[]> {
+  const query = { [Params.keyword]: keyword.trim() }
+  const firstPage = await searchPage(query, 0)
+  const last = Math.min(lastPageIndex(firstPage), pages - 1)
+  const rest = await Promise.all(Array.from({ length: last }, (_, i) => searchPage(query, i + 1)))
+  return dedupedAndSorted([firstPage, ...rest].flatMap(parseListings))
+}
+
+/** Words too common in club names to identify one ("Oak Hall School Chess Club" → oak, hall). */
+const genericClubWords = new Set([
+  'chess', 'club', 'clubs', 'school', 'the', 'of', 'and', 'at', 'inc', 'llc', 'assoc', 'association', 'assn', 'center',
+  'academy', 'team', 'program', 'scholastic', 'foundation', 'league', 'org', 'organization', 'cc', 'ca',
+])
+
+const wordsOf = (s: string) => unescape(s).toLowerCase().replace(/&/g, ' ').split(/[^a-z0-9]+/).filter(Boolean)
+
+/** The words that identify a club by name; falls back to all words when every one is generic. */
+export function clubKeywords(name: string): string[] {
+  const all = wordsOf(name)
+  const distinctive = all.filter((w) => !genericClubWords.has(w))
+  return distinctive.length ? distinctive : all
+}
+
+/** Whether a listing's organizer or title contains every identifying word of the club's name. */
+export function isFromClub(listing: TournamentListing, keywords: string[]): boolean {
+  if (!keywords.length) return false
+  return [listing.organizer, listing.name].some((text) => {
+    const words = new Set(wordsOf(text))
+    return keywords.every((k) => words.has(k))
+  })
+}
+
+/** A club's upcoming announcements, found by its name. */
+export async function fetchClubUpcoming(clubName: string): Promise<TournamentListing[]> {
+  const keywords = clubKeywords(clubName)
+  if (!keywords.length) return []
+  return (await searchUpcoming(keywords.join(' '))).filter((l) => isFromClub(l, keywords))
+}
+
 /** Finds the announcement for a Plan Ahead entry, if the organizer posted one. */
 export async function findAnnouncement(event: MajorEvent): Promise<TournamentListing | undefined> {
   return bestMatch(event, parseListings(await searchPage({ [Params.keyword]: searchName(event) }, 0)))

@@ -45,3 +45,39 @@ describe('watched players', () => {
     expect(prefs.watched).toHaveLength(1)
   })
 })
+
+describe('saved schools and clubs', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('saves, lists in order, and unsaves', () => {
+    expect(prefs.toggleSavedClub({ id: 'H6043396', name: 'Oak Hall School Chess Club', state: 'FL' })).toBe(true)
+    expect(prefs.toggleSavedClub({ id: 'A5002346', name: 'Marshall Chess Club', state: 'NY' })).toBe(true)
+    expect(prefs.savedClubs.map((c) => c.id)).toEqual(['H6043396', 'A5002346'])
+    expect(prefs.isClubSaved('A5002346')).toBe(true)
+    expect(prefs.toggleSavedClub({ id: 'H6043396', name: 'Oak Hall School Chess Club' })).toBe(false)
+    prefs.removeSavedClub('A5002346')
+    expect(prefs.savedClubs).toEqual([])
+  })
+})
+
+describe('my school', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('keeps one school as mine, separate from other saved ones', () => {
+    prefs.toggleSavedClub({ id: 'A5002346', name: 'Marshall Chess Club' })
+    prefs.setMyClub({ id: 'H6014810', name: 'International Chess Academy' })
+    expect(prefs.myClub?.id).toBe('H6014810')
+    expect(prefs.savedClubs.map((c) => [c.id, c.isMine])).toEqual([['H6014810', true], ['A5002346', false]])
+    prefs.setMyClub({ id: 'A5002346', name: 'Marshall Chess Club' })
+    expect(prefs.savedClubs.map((c) => [c.id, c.isMine])).toEqual([['A5002346', true], ['H6014810', false]])
+    prefs.setMyClub(null)
+    expect(prefs.myClub).toBeUndefined()
+    expect(prefs.savedClubs).toHaveLength(2)
+  })
+
+  it('unsaving My School removes it', () => {
+    prefs.setMyClub({ id: 'H6014810', name: 'International Chess Academy' })
+    expect(prefs.toggleSavedClub({ id: 'H6014810', name: 'International Chess Academy' })).toBe(false)
+    expect(prefs.myClub).toBeUndefined()
+  })
+})

@@ -95,8 +95,8 @@ export const eventsView: View = ({ root, params, signal }) => {
     if (!filtered.length) return emptyState('⌕', 'No tournaments found', 'Try a larger distance or a different date or type.')
     return `
       ${sectionLabel(`${dated.length} ${dated.length === 1 ? 'tournament' : 'tournaments'} within ${radius} mi`)}
-      <div class="stack">${dated.map(listingRow).join('')}</div>
-      ${recurring.length ? `${sectionLabel('Weekly & recurring')}<div class="stack">${recurring.map(listingRow).join('')}</div>` : ''}
+      <div class="stack">${dated.map((l) => listingRow(l)).join('')}</div>
+      ${recurring.length ? `${sectionLabel('Weekly & recurring')}<div class="stack">${recurring.map((l) => listingRow(l)).join('')}</div>` : ''}
       <p class="footnote center">Listings from US Chess Tournament Life Announcements.</p>
       ${supportLine()}`
   }
@@ -237,10 +237,12 @@ const chipIcons = {
   type: `<svg class="chip-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2v3.5h3.5V5zm7 0v3.5h3.5V5zM8.5 8.5V12H12V8.5zm7 0V12H19V8.5zM5 12v3.5h3.5V12zm7 0v3.5h3.5V12zm-3.5 3.5V19H12v-3.5zm7 0V19H19v-3.5z"/></svg>`,
 }
 
-function chip(key: string, icon: string, active: boolean, title: string, options: [string, string][], value: string): string {
+const chipLabels: Record<string, string> = { radius: 'Distance', when: 'When', type: 'Type', state: 'State' }
+
+export function chip(key: string, icon: string, active: boolean, title: string, options: [string, string][], value: string): string {
   return `<label class="chip${active ? ' active' : ''}">
     ${icon}<span class="chip-text">${esc(title)}</span>
-    <select data-filter="${key}" aria-label="${key === 'radius' ? 'Distance' : key === 'when' ? 'When' : 'Type'}">
+    <select data-filter="${key}" aria-label="${chipLabels[key] ?? key}">
       ${options.map(([k, label]) => `<option value="${esc(k)}"${k === value ? ' selected' : ''}>${esc(label)}</option>`).join('')}
     </select>
   </label>`
@@ -257,13 +259,14 @@ export function dateBlock(date: Date | null): string {
   </span>`
 }
 
-function listingRow(l: TournamentListing): string {
+/** An upcoming tournament. `back` ("search", "club/H6043396") sets where its page's back link returns to. */
+export function listingRow(l: TournamentListing, back?: string): string {
   const parts = [l.location]
   if (l.isRecurring) parts.unshift('Recurring')
   else if (l.startDate && l.endDate && l.endDate > l.startDate) parts.unshift(dateRange(l.startDate, l.endDate))
   else if (l.startDate) parts.unshift(l.startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }))
   if (l.organizer) parts.push(l.organizer)
-  return `<a class="card tournament-row" href="#/tournament${esc(l.id)}">
+  return `<a class="card tournament-row" href="#/tournament${esc(l.id)}${back ? `?back=${esc(back)}` : ''}">
     ${dateBlock(l.isRecurring ? null : l.startDate)}
     <span class="tournament-main">
       <strong>${esc(l.name)}</strong>
