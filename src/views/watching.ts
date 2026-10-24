@@ -1,11 +1,11 @@
-// Watching: saved tournaments, My players and Rivals & friends, with each
+// Watching: saved tournaments, My Player, My School & Club, Rivals & friends and other saved schools & clubs, with each
 // player's rating and when they were last rated. Port of WatchlistView.swift.
 
 import type { View } from '../router'
 import { badgeSlot } from '../toplists'
 import {
-  type SavedTournament, type WatchedPlayer, avatar, chevron, clockDigits, daysAgo, dateRange, emptyState, esc, eventDate,
-  prefs, sectionLabel,
+  type SavedClub, type SavedTournament, type WatchedPlayer, avatar, chevron, clockDigits, daysAgo, dateRange, emptyState, esc, eventDate,
+  prefs, sectionLabel, stateChip,
 } from '../ui'
 import { type RatingChange, alertSupport, alertsEnabled, checkWatchlist, enableAlerts, lastChecked, sendSampleAlert, watchlistChecked } from '../watchlist'
 
@@ -21,6 +21,9 @@ export const watchingView: View = ({ root, signal }) => {
     const primary = watched.filter((r) => r.isPrimary)
     const rivals = watched.filter((r) => !r.isPrimary)
     const saved = prefs.savedTournaments
+    const clubs = prefs.savedClubs
+    const myClub = clubs.filter((c) => c.isMine)
+    const otherClubs = clubs.filter((c) => !c.isMine)
     const checkedAt = lastChecked()
 
     root.innerHTML = `
@@ -39,13 +42,15 @@ export const watchingView: View = ({ root, signal }) => {
           : ''
       }
       ${
-        !watched.length && !saved.length
-          ? `${emptyState('♥', 'Nothing on the board yet', 'Open any player and tap ♥ Watch to track their rating, or save a tournament from Events to keep it here.')}
+        !watched.length && !saved.length && !clubs.length
+          ? `${emptyState('♥', 'Nothing on the board yet', 'Open any player and tap ♥ Watch to track their rating, or save a tournament, school or club to keep it here.')}
              <p class="center"><a class="button prominent" href="#/search">Find a player</a></p>`
           : ''
       }
-      ${primary.length ? `${sectionLabel('My players')}<div class="card list">${primary.map((r) => watchRow(r, 0, 1)).join('')}</div>` : ''}
+      ${primary.length ? `${sectionLabel('My Player')}<div class="card list">${primary.map((r) => watchRow(r, 0, 1)).join('')}</div>` : ''}
+      ${myClub.length ? `${sectionLabel('My School & Club')}<div class="card list">${myClub.map(clubRow).join('')}</div>` : ''}
       ${rivals.length ? `${sectionLabel('Rivals & friends')}<div class="card list">${rivals.map((r, i) => watchRow(r, i, rivals.length)).join('')}</div>` : ''}
+      ${otherClubs.length ? `${sectionLabel('Saved Schools & Clubs')}<div class="card list">${otherClubs.map(clubRow).join('')}</div>` : ''}
 
       ${
         watched.length
@@ -123,6 +128,16 @@ export const watchingView: View = ({ root, signal }) => {
         e.preventDefault()
         prefs.removeSaved(id)
         break
+      case 'remove-club':
+        e.preventDefault()
+        prefs.removeSavedClub(id)
+        break
+      case 'my-club': {
+        e.preventDefault()
+        const club = prefs.savedClubs.find((c) => c.id === id)
+        if (club) prefs.setMyClub(club)
+        break
+      }
       case 'up':
       case 'down': {
         const rows = prefs.watched
@@ -131,7 +146,7 @@ export const watchingView: View = ({ root, signal }) => {
         const j = target.dataset.action === 'up' ? i - 1 : i + 1
         if (i < 0 || j < 0 || j >= rivals.length) return
         ;[rivals[i], rivals[j]] = [rivals[j], rivals[i]]
-        // My players stay first; rivals follow in the new order.
+        // My Player stays first; rivals follow in the new order.
         prefs.watched = [...rows.filter((r) => r.isPrimary), ...rivals]
         break
       }
@@ -195,6 +210,18 @@ function alertHelp(): string {
     default:
       return ''
   }
+}
+
+function clubRow(c: SavedClub): string {
+  return `<div class="watch-item"><div class="watch-row">
+    <a class="watch-link club-row" href="#/club/${esc(c.id)}">
+      <span class="bookmark" aria-hidden="true">🏫</span>
+      <span class="player-text"><span class="player-name"><strong>${esc(c.name)}${c.isMine ? ' <span class="crown" aria-label="My school">♛</span>' : ''}</strong></span><small class="club-line">${stateChip(c.state)}<span class="mono">ID ${esc(c.id)}</span></small></span>
+      ${chevron}
+    </a>
+    ${c.isMine ? '' : `<button class="icon-button small crown-button" type="button" data-action="my-club" data-member="${esc(c.id)}" aria-label="Make ${esc(c.name)} my school">♛</button>`}
+    <button class="icon-button small" type="button" data-action="remove-club" data-member="${esc(c.id)}" aria-label="Remove ${esc(c.name)} from saved">✕</button>
+  </div></div>`
 }
 
 function savedRow(t: SavedTournament): string {

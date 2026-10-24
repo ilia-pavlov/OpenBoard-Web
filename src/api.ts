@@ -2,9 +2,9 @@ import { Params, Ratings, fill } from './endpoints'
 import { cached } from './store'
 import {
   type APIMaxRank, type APIMember, type APIMemberGame, type APIMemberSection, type APIPage, type APIRatedEvent,
-  type APIStanding, type APITopList, type APITopListDefinition, type ChessEvent, type Player, type PlayerSummary,
+  type APIAffiliate, type APIEventSummary, type APIStanding, type APITopList, type Club, type EventSummary, type APITopListDefinition, type ChessEvent, type Player, type PlayerSummary,
   type RatedWin, type RatedWins, type TopList, type TopListDefinition, mapEvent, mapPlayer, mapRegularWin,
-  mapStanding, mapSummary, mapTopList, mapTopListDefinitions,
+  mapStanding, mapSummary, mapTopList, mapTopListDefinitions, currentFirst, isClubID, mapClub, mapEventSummary,
 } from './models'
 
 export class ApiError extends Error {
@@ -123,6 +123,63 @@ export async function searchPlayers(query: string): Promise<PlayerSummary[]> {
   // ignored and return the default top-rated list instead.
   const page = await get<APIPage<APIMember>>(Ratings.memberSearch, { [Params.fuzzy]: trimmed, [Params.size]: '40' })
   return page.items.map(mapSummary)
+}
+
+/** Clubs and schools by name (optionally in one state), or the one with that ID (e.g. H6043396). Current ones first. */
+export async function searchClubs(query: string, state?: string): Promise<Club[]> {
+  const trimmed = query.trim()
+  if (isClubID(trimmed)) {
+    try {
+      return [mapClub(await get<APIAffiliate>(fill(Ratings.affiliate, { affiliateID: trimmed.toUpperCase() })))]
+    } catch (error) {
+      if (error instanceof ApiError && error.kind === 'notFound') return []
+      throw error
+    }
+  }
+  const page = await get<APIPage<APIAffiliate>>(Ratings.affiliateSearch, {
+    [Params.fuzzy]: trimmed,
+    [Params.size]: '40',
+    ...(state ? { [Params.state]: state } : {}),
+  })
+  return currentFirst(page.items.map((a) => mapClub(a)))
+}
+
+/** Rated events whose name (or club's name) matches, newest first. */
+export async function searchEvents(query: string): Promise<EventSummary[]> {
+  const page = await get<APIPage<APIEventSummary>>(Ratings.eventSearch, { [Params.name]: query.trim(), [Params.size]: '40' })
+  return page.items.map(mapEventSummary)
+}
+
+const stateEvents = new Map<string, Promise<EventSummary[]>>()
+
+/** A state's most recent rated events (up to 500, newest first): about a year in most states. */
+export function fetchStateEvents(state: string): Promise<EventSummary[]> {
+  let request = stateEvents.get(state)
+  if (!request) {
+    request = collectPages(100, 5, (offset, size) =>
+      get<APIPage<APIEventSummary>>(Ratings.eventSearch, {
+        [Params.state]: state,
+        [Params.size]: String(size),
+        [Params.offset]: String(offset),
+      }),
+    ).then((items) => items.map(mapEventSummary))
+    request.catch(() => stateEvents.delete(state))
+    stateEvents.set(state, request)
+  }
+  return request
+}
+
+export function fetchClub(id: string): Promise<Club> {
+  return get<APIAffiliate>(fill(Ratings.affiliate, { affiliateID: id })).then((a) => mapClub(a))
+}
+
+/** One page of a club's rated events, newest first. */
+export async function fetchClubEvents(id: string, offset: number, size = 50): Promise<{ events: EventSummary[]; more: boolean }> {
+  const page = await get<APIPage<APIEventSummary>>(fill(Ratings.affiliateEvents, { affiliateID: id }), {
+    [Params.size]: String(size),
+    [Params.offset]: String(offset),
+  })
+  return { events: page.items.map(mapEventSummary), more: page.hasNextPage === true && page.items.length > 0 }
 }
 
 /** One section's standings, every page (safety cap: 500 players). */

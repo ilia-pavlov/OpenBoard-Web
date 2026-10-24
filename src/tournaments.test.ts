@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  bestMatch, dedupedAndSorted, lastPageIndex, matchesKind, occursIn, parseDetail, parseListings, parseMajorEvents,
+  bestMatch, clubKeywords, dedupedAndSorted, isFromClub, lastPageIndex, matchesKind, occursIn, parseDetail, parseListings, parseMajorEvents,
   registrationLink, startDate, unescape, windowRange,
 } from './tournaments'
 
@@ -121,3 +121,24 @@ describe('unescape', () => {
     expect(unescape('Rock &amp; Roll &#8217;26 &#x2014; &amp;lt;')).toBe('Rock & Roll ’26 — &lt;')
   })
 })
+
+describe('club announcements', () => {
+  const listing = (name: string, organizer: string) =>
+    ({ id: '/x', name, organizer, location: '', summary: '', banner: '', startDate: null, endDate: null, isRecurring: false })
+
+  it('keeps the words that identify a club', () => {
+    expect(clubKeywords('OAK HALL SCHOOL CHESS CLUB')).toEqual(['oak', 'hall'])
+    expect(clubKeywords('Marshall Chess Club')).toEqual(['marshall'])
+    expect(clubKeywords('LEHIGH VALLEY CHESS ASSOC')).toEqual(['lehigh', 'valley'])
+    expect(clubKeywords('Chess Club')).toEqual(['chess', 'club'])
+  })
+
+  it('matches on organizer or title, not loose mentions', () => {
+    const marshall = clubKeywords('MARSHALL CHESS CLUB')
+    expect(isFromClub(listing('MARSHALL $700 FIDE BLITZ', 'Marshall Chess Club'), marshall)).toBe(true)
+    expect(isFromClub(listing('Fall Open', 'The Marshall Chess Club, Inc.'), marshall)).toBe(true)
+    expect(isFromClub(listing('Greater Cleveland Scholastic League #1', 'Progress With Chess'), marshall)).toBe(false)
+    expect(isFromClub(listing('Marshalltown Open', 'Iowa Chess'), marshall)).toBe(false)
+  })
+})
+

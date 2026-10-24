@@ -20,6 +20,19 @@ describe('upstreamFor', () => {
     expect(at('/api/site/princeton-national-chess-day-open?_format=json')?.ttl).toBe(3600)
   })
 
+  it('relays club, school and event-name searches', () => {
+    expect(at('/api/ratings/affiliates?Fuzzy=oak%20hall&Size=40')?.url).toBe('https://ratings-api.uschess.org/api/v1/affiliates?Fuzzy=oak+hall&Size=40')
+    expect(at('/api/ratings/affiliates/H6043396')?.ttl).toBe(12 * 3600)
+    expect(at('/api/ratings/affiliates/H6043396/events?Size=50&Offset=0')?.url).toBe(
+      'https://ratings-api.uschess.org/api/v1/affiliates/H6043396/events?Offset=0&Size=50',
+    )
+    expect(at('/api/ratings/rated-events?Name=marshall&Size=40')?.url).toBe('https://ratings-api.uschess.org/api/v1/rated-events?Name=marshall&Size=40')
+    expect(at('/api/ratings/affiliates?Fuzzy=chess&StateCode=NJ&Size=40')?.url).toBe(
+      'https://ratings-api.uschess.org/api/v1/affiliates?Fuzzy=chess&Size=40&StateCode=NJ',
+    )
+    expect(at('/api/ratings/affiliates/h6043396')).toBeUndefined() // IDs are upper case
+  })
+
   it('normalizes parameter order so equivalent requests share a cache entry', () => {
     expect(at('/api/ratings/members?Size=40&Fuzzy=pavlov')?.url).toBe(at('/api/ratings/members?Fuzzy=pavlov&Size=40')?.url)
   })
