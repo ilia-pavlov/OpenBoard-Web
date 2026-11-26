@@ -403,6 +403,18 @@ export const resultFor = (e: EventResult, system: RatingSystem) => (system === '
 export const hasHistory = (p: Player, system: RatingSystem) => p.events.some((e) => resultFor(e, system)?.post != null)
 export const firstName = (p: Player) => p.name.split(' ')[0] || p.name
 
+/**
+ * The live rating: the newest rated event's post-rating, which is newer than the
+ * official monthly list. Falls back to the official value when no event has one.
+ * Floor and game count stay from the official record.
+ */
+export function liveRating(p: Player, system: RatingSystem): Rating | undefined {
+  const official = p.ratings[system]
+  const post = p.events.map((e) => resultFor(e, system)?.post).find((v) => v != null)
+  if (post == null) return official
+  return { ...official, value: post }
+}
+
 export function peakRegular(p: Player): number | undefined {
   const all = [...p.ratingHistory, ...(p.ratings.regular?.value != null ? [p.ratings.regular.value] : [])]
   return all.length ? Math.max(...all) : undefined

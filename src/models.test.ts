@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   type APIMember, type APIMemberSection, activeClubs, capitalizedIfShouty, currentFirst, isClubID, mapClub, mapEventSummary, classTitle, isProvisional, mapEvent, mapPlayer,
-  mapStanding, mapSummary, parseDate, peakRegular, topPercent,
+  liveRating, mapStanding, mapSummary, parseDate, peakRegular, topPercent,
 } from './models'
 
 const member: APIMember = {
@@ -108,6 +108,14 @@ describe('helpers', () => {
   it('includes the published rating in the peak', () => {
     const player = mapPlayer({ ...member, ratings: [{ ratingSystem: 'R', rating: 1500 }] }, sections, maxRanks)
     expect(peakRegular(player)).toBe(1500)
+  })
+
+  it('shows the live rating from the latest event, not the stale official list', () => {
+    const player = mapPlayer({ ...member, ratings: [{ ratingSystem: 'R', rating: 1900, floor: 1700 }] }, sections, maxRanks)
+    const latestPost = player.events.find((e) => e.regular?.post != null)!.regular!.post
+    expect(liveRating(player, 'regular')).toEqual({ value: latestPost, floor: 1700, games: undefined, provisional: undefined })
+    const noEvents = mapPlayer({ ...member, ratings: [{ ratingSystem: 'R', rating: 1900 }] }, [], maxRanks)
+    expect(liveRating(noEvents, 'regular')?.value).toBe(1900)
   })
 
   it('summarizes a member for search results', () => {
