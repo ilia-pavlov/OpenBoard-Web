@@ -50,6 +50,10 @@ describe('dedupedAndSorted', () => {
     const out = dedupedAndSorted([l('b', new Date(2026, 9, 20)), l('r', new Date(2026, 9, 4), true), l('a', new Date(2026, 9, 5)), l('a', new Date(2026, 9, 5)), l('old', new Date(2026, 8, 1))], now)
     expect(out.map((x) => x.id)).toEqual(['a', 'b', 'r'])
   })
+  it('drops announcements with no date (finished series US Chess still lists)', () => {
+    const undated = { ...l('undated', new Date(2026, 9, 5)), startDate: null, endDate: null }
+    expect(dedupedAndSorted([undated, l('a', new Date(2026, 9, 5))], now).map((x) => x.id)).toEqual(['a'])
+  })
 })
 
 describe('filters', () => {

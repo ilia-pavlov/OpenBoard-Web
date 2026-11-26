@@ -193,7 +193,12 @@ export function parseListings(html: string): TournamentListing[] {
 /** Highest `page=N` in the pager (0 when there's a single page). */
 export const lastPageIndex = (html: string) => Math.max(0, ...captures(Patterns.pagerPage, html).map(Number).filter(Number.isFinite))
 
-/** Dated events soonest first, then recurring series; past events and duplicates across pages removed. */
+/**
+ * Dated events soonest first, then recurring series; past events and duplicates
+ * across pages removed. Listings with no date are dropped too: US Chess's search
+ * keeps old announcements (finished recurring series from 2021–2024) but renders
+ * no date for them once every occurrence is over.
+ */
 export function dedupedAndSorted(listings: TournamentListing[], now = new Date()): TournamentListing[] {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const seen = new Set<string>()
@@ -202,7 +207,7 @@ export function dedupedAndSorted(listings: TournamentListing[], now = new Date()
       if (seen.has(l.id)) return false
       seen.add(l.id)
       const last = l.endDate ?? l.startDate
-      return !last || last >= today
+      return !!last && last >= today
     })
     .sort((a, b) => {
       if (a.isRecurring !== b.isRecurring) return a.isRecurring ? 1 : -1
