@@ -5,14 +5,14 @@
 // only when the user turned alerts on.
 
 import { fetchPlayer } from './api'
-import type { Player } from './models'
+import { liveRating, type Player } from './models'
 import { isoDay, prefs } from './ui'
 
 const checkInterval = 12 * 60 * 60 * 1000
 
-/** Best-available regular rating: the published value, or the latest event's post rating. */
-export const currentRegular = (p: Player) => p.ratings.regular?.value ?? p.events[0]?.regular?.post
-export const currentQuick = (p: Player) => p.ratings.quick?.value ?? p.events[0]?.quick?.post
+/** Live rating: the latest event's post rating, or the published value when there's none. */
+export const currentRegular = (p: Player) => liveRating(p, 'regular')?.value
+export const currentQuick = (p: Player) => liveRating(p, 'quick')?.value
 
 /** What to store about a player when they're watched or checked. */
 export function snapshot(p: Player) {

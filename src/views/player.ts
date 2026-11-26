@@ -4,7 +4,7 @@
 import { fetchPlayer } from '../api'
 import {
   type Player, type ProvisionalStatus, type Rating, type RankSlot, classTitle, delta, establishedAfter, firstName, hasHistory,
-  peakRegular, provisionalStatus,
+  liveRating, peakRegular, provisionalStatus,
   topPercent,
 } from '../models'
 import {
@@ -81,7 +81,7 @@ function loadPlayer(ctx: Parameters<View>[0], id: string, mode: 'mycard' | 'prof
         break
       case 'share': {
         if (!latest) break
-        const regular = latest.ratings.regular?.value
+        const regular = liveRating(latest, 'regular')?.value
         void share(target, {
           title: `${latest.name} · OpenBoard`,
           text: `${latest.name} on OpenBoard${regular != null ? `: Regular ${regular}` : ''}`,
@@ -102,7 +102,7 @@ function watchButton(id: string): string {
 
 function playerPage(player: Player, mode: 'mycard' | 'profile'): string {
   const lastEvent = player.events[0]
-  const regular = player.ratings.regular
+  const regular = liveRating(player, 'regular')
   const lastDelta = delta(lastEvent?.regular)
   const title = mode === 'mycard' ? firstName(player) : player.name
 
@@ -120,10 +120,10 @@ function playerPage(player: Player, mode: 'mycard' | 'profile'): string {
     </div>
     ${badgeSlot(player.id, 'all')}
 
-    ${historyLink(player, 'regular', heroCard(regular, lastDelta, player.ratingHistory, peakRegular(player), hasHistory(player, 'regular'), provisionalStatus(player, 'regular')), 'hero')}
+    ${historyLink(player, 'regular', heroCard(regular, player.ratings.regular?.value, lastDelta, player.ratingHistory, peakRegular(player), hasHistory(player, 'regular'), provisionalStatus(player, 'regular')), 'hero')}
     <div class="mini-row">
-      ${historyLink(player, 'quick', miniCard('Quick', player.ratings.quick, hasHistory(player, 'quick'), provisionalStatus(player, 'quick')), 'mini')}
-      ${miniCard('Blitz', player.ratings.blitz, false, provisionalStatus(player, 'blitz'))}
+      ${historyLink(player, 'quick', miniCard('Quick', liveRating(player, 'quick'), player.ratings.quick?.value, hasHistory(player, 'quick'), provisionalStatus(player, 'quick')), 'mini')}
+      ${miniCard('Blitz', player.ratings.blitz, undefined, false, provisionalStatus(player, 'blitz'))}
     </div>
 
     ${lastEvent && lastDelta ? justRated(player) : ''}
@@ -179,24 +179,31 @@ function provisionalMeter(status?: ProvisionalStatus): string {
   </div>`
 }
 
+/** The official monthly-list value, when the live rating has moved on from it. */
+const staleOfficial = (rating: Rating | undefined, official: number | undefined) =>
+  official != null && rating?.value != null && official !== rating.value ? official : undefined
+
 function heroCard(
   rating: Rating | undefined,
+  official: number | undefined,
   d: number | undefined,
   spark: number[],
   peak: number | undefined,
   disclosure: boolean,
   status: ProvisionalStatus | undefined,
 ): string {
+  const stale = staleOfficial(rating, official)
   let footer = 'UNRATED — PLAY A RATED EVENT TO GET ON THE BOARD'
   if (rating?.value != null) {
     const parts: string[] = []
     if (rating.floor != null) parts.push(`FLOOR ${rating.floor}`)
     if (!status?.provisional && rating.games != null) parts.push(`${rating.games} GAMES`)
+    if (stale != null) parts.push(`OFFICIAL ${stale}`)
     if (peak != null) parts.push(`PEAK ${peak}`)
     footer = parts.join(' · ')
   }
   return `<div class="glass hero-card">
-    <div class="card-head">${sectionLabel('Regular')}<span class="spacer"></span>${d ? deltaBadge(d, true) : ''}${disclosure ? chevron : ''}</div>
+    <div class="card-head">${sectionLabel(stale != null ? 'Regular · Live' : 'Regular')}<span class="spacer"></span>${d ? deltaBadge(d, true) : ''}${disclosure ? chevron : ''}</div>
     ${clockDigits(rating?.value, { size: 'hero' })}
     ${spark.length > 1 ? `<div class="spark-box">${sparkline(spark)}</div>` : ''}
     ${provisionalMeter(status)}
@@ -204,17 +211,19 @@ function heroCard(
   </div>`
 }
 
-function miniCard(label: string, rating: Rating | undefined, disclosure: boolean, status: ProvisionalStatus | undefined): string {
+function miniCard(label: string, rating: Rating | undefined, official: number | undefined, disclosure: boolean, status: ProvisionalStatus | undefined): string {
+  const stale = staleOfficial(rating, official)
   let foot = 'UNRATED'
   const provisional = rating?.value != null && status?.provisional && status.liveRemaining != null
   if (rating?.value != null) {
     const parts: string[] = []
     if (!provisional && rating.games != null) parts.push(`${rating.games} GAMES`)
     if (rating.floor != null) parts.push(`FLOOR ${rating.floor}`)
+    if (stale != null) parts.push(`OFFICIAL ${stale}`)
     foot = parts.join(' · ') || '&nbsp;'
   }
   return `<div class="glass mini-card">
-    <div class="card-head">${sectionLabel(label)}<span class="spacer"></span>${disclosure ? chevron : ''}</div>
+    <div class="card-head">${sectionLabel(stale != null ? `${label} · Live` : label)}<span class="spacer"></span>${disclosure ? chevron : ''}</div>
     ${clockDigits(rating?.value, { tint: 'teal', size: 'lg' })}
     ${provisional ? `<div class="mini-provisional" title="${status!.liveRemaining} more games until the rating is established">Provisional · ${status!.liveRemaining} left ${provisionalInfoButton()}</div>` : ''}
     <div class="card-foot small mono">${foot}</div>
